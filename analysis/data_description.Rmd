@@ -1,0 +1,850 @@
+---
+title: "Data description"
+output: html_document
+bibliography: references.bib
+---
+
+TO DO:
+
+-   Describe behaviours and make explicit how you end up grouping them. (e.g., eating vs eating up? vigilance vs vigilance down? if up and down mean standing or laying down, vigilance makes sense but eating doesn't). ASK
+-   files named 'bis'?? ASK
+
+```{r}
+options(tidyverse.quiet = TRUE)
+```
+
+```{r}
+
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  include = TRUE,
+  eval = TRUE,
+  cols.print = 7,
+  rows.print = 7
+)
+
+```
+
+```{r setup}
+library(workflowr)
+library(tidyverse)
+library(fs)
+library(here)
+library(lubridate)
+library(reactable)
+library(paint)
+library(plotly)
+library(hms)
+
+```
+
+Data came as .csv files. The original repo had two folders for data: "sep" and\
+"dic", not sure why nor which files where on each folder (may be able to know\
+this later). We'll suppouse those files starting with "sep" where those on the\
+"sep" folder and those starting with "video" where those on the "dic" folder.\
+(and that's how I organized the files on this repo).
+
+Update: From the original paper where the data came from [@ruiz-suarez2022], we can see that "sep" means "September" and "dic" means "December".
+
+"After discarding the videos that had not captured sheep or those for which\
+acceleration data was not available, a total of 18 videos from eight different\
+animals were obtained from the session of September and a total of 49 videos\
+from 17 different animals from the session of December."
+
+Files are named indicating number of video (e.g., 'video10' for the 10th video) and sheep number (e.g. ov18 for then 18th sheep)
+
+```{r list files}
+
+## get paths of files
+sep_paths <- dir_ls(path = here("data", "sep"), glob = "*.csv") %>% 
+  print()
+dic_paths <- dir_ls(path = here("data", "dic"), glob = "*.csv") %>% 
+  print()
+
+```
+
+September files all contain the same amount of columns (27).
+
+```{r raw data vars, message=FALSE, warning=FALSE}
+
+raw_sep <- sep_paths %>% 
+  map(
+    read_csv, 
+    id = "file_name",
+    col_types = cols()
+  ) 
+
+map(raw_sep, ncol) %>% 
+  unique()
+
+
+
+
+
+
+
+
+```
+
+And the column names are
+
+```{r}
+raw_sep[[1]] %>% 
+  colnames
+
+
+
+```
+
+Whereas december files have different amount of cols
+
+```{r}
+raw_dic <- dic_paths %>% 
+  map(
+    read_csv,
+    id = "file_name",
+    col_types = cols()
+  ) 
+
+map(raw_dic, ncol) %>% 
+  unique()
+
+
+ncol(raw_dic[[37]])
+```
+
+which seems to be due to some files lacking some variables (those with less than 27 columns), but there's a particular file having 28 columns (video2_ov9).
+
+```{r}
+
+
+dic_paths[[37]]
+ncol(raw_dic[[37]])
+colnames(raw_dic[[37]])
+```
+
+This file seems to have 2 different Pitch angle vars with different values.
+
+Still, we are only interested in accelerometer, date-time, and behaviour variables, and thus will just keep those. We will also modify the date-time variables and add a few other useful ones:
+
+-   sheep name (e.g., ov18)
+
+-   sheep number (e.g., 18)
+
+-   video name (e.g., video 21)
+
+-   video number (e.g., 21)
+
+We will also keep `Event.no.` column. This seems to be something recorded by\
+the Daily Diaries that indicates the record. This column will be useful since we\
+will want to make sure we have the right ordering of rows inside each second\
+(remember these Daily Diaries makes 40 records per second, 40Hz).
+
+(During the first iteration, we won't use magnetometer data. Which will allow us to avoid wrangling problems due to many December files missing magnetometer data).
+
+```{r}
+colnames(raw_sep[[1]])
+```
+
+Clean data
+
+```{r}
+
+vars_to_keep <- c(
+  'file_name',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  # 'Mag_x',
+  # 'Mag_y',
+  # 'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'
+)
+
+
+
+# Wrangle September files
+raw_data_sep <- sep_paths %>% 
+  # Read files
+  map(
+    read_csv, 
+    id = "file_name",
+    col_types = cols()
+  ) %>%
+  # Select columns to keep
+  map(
+    ~ select(
+      .x,
+      vars_to_keep
+    )
+  ) %>% 
+  # Add sheep name column
+  map(
+    ~ add_column(
+        .x, 
+        sheep_name = str_extract(
+          .x$file_name,
+          "ov.."
+        )
+    )
+  ) %>% 
+  # Add sheep number column 
+  map(
+    ~ add_column(
+        .x, 
+        sheep_number = as.double(
+          str_extract(
+            .x$sheep_name,
+            "[0-9]+"
+          )
+        )
+    )
+  ) %>% 
+  # Add Year variable
+  map(
+    ~ mutate(
+        .x, 
+        year = year(DateTime)
+    )
+  ) %>% 
+  # Add Month variable
+  map(
+    ~ mutate(
+        .x, 
+        month = month(DateTime)
+    )
+  ) %>% 
+  # Add Day variable
+  map(
+    ~ mutate(
+        .x, 
+        day = day(DateTime)
+    )
+  ) %>%
+  # Remove DateTime var
+  map(
+    ~ select(
+        .x,
+        -'DateTime'
+    )
+  ) %>% 
+  # Rename all vars to lower-case names to avoid problems
+  map(
+    ~ rename_all(
+        .x, 
+        tolower
+    )
+  ) %>% 
+  # Add column indicating video name
+  map(
+    ~ mutate(
+        .x,
+        video_name = str_extract(
+          .x$file_name, 
+          pattern = "video.."
+        )
+    )
+  ) %>% 
+  # Add column indicating video number
+  map(
+    ~ mutate(
+        .x, 
+        video_number = as.double(
+          str_extract(
+            .x$video_name, 
+            pattern = "[0-9]+"
+          ) 
+        )  
+    )
+  ) %>% 
+  # Bind rows to form a single tibble
+  bind_rows
+  
+
+
+# Wrangle December files
+## December files have some problems where a few variables don't have consistent classes
+## across files. We will have to add a few steps to correct this. 
+raw_data_dic <- dic_paths %>% 
+  # Read files
+  map(
+    read_csv, 
+    id = "file_name",
+    col_types = cols()
+  ) %>%
+  # Select columns to keep
+  map(
+    ~ select(
+      .x,
+      vars_to_keep
+    )
+  ) %>% 
+  # Add sheep name column
+  map(
+    ~ add_column(
+        .x, 
+        sheep_name = str_extract(
+          .x$file_name,
+          "ov.."
+        )
+    )
+  ) %>% 
+  # Add sheep number column 
+  map(
+    ~ add_column(
+        .x, 
+        sheep_number = as.double(
+          str_extract(
+            .x$sheep_name,
+            "[0-9]+"
+          )
+        )
+    )
+  ) %>% 
+  # Add Year variable
+  map(
+    ~ mutate(
+        .x, 
+        year = year(DateTime)
+    )
+  ) %>% 
+  # Add Month variable
+  map(
+    ~ mutate(
+        .x, 
+        month = month(DateTime)
+    )
+  ) %>% 
+  # Add Day variable
+  map(
+    ~ mutate(
+        .x, 
+        day = day(DateTime)
+    )
+  ) %>%
+  # Remove DateTime var
+  map(
+    ~ select(
+        .x,
+        -'DateTime'
+    )
+  ) %>% 
+  # Rename all vars to lower-case names to avoid problems
+  map(
+    ~ rename_all(
+        .x, 
+        tolower
+    )
+  ) %>% 
+  # Coerce to consistent classes
+  map(
+    ~ mutate_at(
+        .x,
+        c('hours', 'minutes', 'seconds'),
+        as.double
+      ) 
+  ) %>%  
+  # Add column indicating video name
+  map(
+    ~ mutate(
+        .x,
+        video_name = str_extract(
+          .x$file_name, 
+          pattern = "video.."
+        )
+    )
+  ) %>% 
+  # Add column indicating video number
+  map(
+    ~ mutate(
+        .x, 
+        video_number = as.double(
+          str_extract(
+            .x$video_name, 
+            pattern = "[0-9]+"
+          ) 
+        )
+    )
+  ) %>% 
+  # Bind rows to form a single tibble
+  bind_rows
+  
+
+
+
+```
+
+Now we have the datasets cleaned:
+
+-   September data
+
+```{r}
+reactable(raw_data_sep)
+
+
+```
+
+-   December data
+
+```{r}
+
+reactable(raw_data_dic)
+
+```
+
+Now we will merge both datasets, and check which columns contain NAs
+
+```{r}
+
+
+clean_data <- bind_rows(
+  raw_data_dic, 
+  raw_data_sep
+) 
+ 
+
+
+print("Amount of NAs in each column")
+nas <- colSums(is.na(clean_data)) %>% print()
+
+print("Percentage of NAs relative to total rows in dataset")
+nas / nrow(clean_data) * 100 
+
+
+```
+
+DESCRIBE BEHAVIOURS
+
+```{r}
+unique(clean_data$behaviours)
+
+```
+
+We can see that only the 'behaviours' column contain NAs and they amount to\
+about 5% of the entries.
+
+We will remove this NAs for the time being, but we will check this again later.\
+We will also change the order of the columns and arrange the dataset.
+
+```{r}
+clean_data <- clean_data %>% 
+  # Remove rows containing NAs
+  drop_na %>% 
+  # Change order of columns
+  select(
+    'sheep_name', 
+    'sheep_number', 
+    'year', 
+    'month', 
+    'day', 
+    'hours', 
+    'minutes', 
+    'seconds',
+    'event.no.',
+    'acc_x', 
+    'acc_y',
+    'acc_z', 
+    'behaviours',
+    'video_name', 
+    'video_number',
+    'file_name'
+  ) %>% 
+  # Sort data
+  arrange(
+    sheep_number, 
+    year, 
+    month, 
+    day, 
+    hours, 
+    minutes, 
+    seconds,
+    event.no.
+  ) %>% 
+  # Rename behaviours with tidyverse style + correct duplicated ones  
+  mutate(
+    behaviours = recode(
+      behaviours, 
+      'Search' = 'search', 
+      'Eating' = 'eating', 
+      'Vigilance' = 'vigilance', 
+      'Fast.walk' = 'fast_walk', 
+      'Walk' = 'walk', 
+      'Fast.Walk' = 'fast_walk', 
+      'Scratch' = 'scratch', 
+      'Eating.up' = 'eating',
+      'Vigilance.down' = 'vigilance', 
+      'Resting' = 'resting', 
+      'Shake' = 'shake', 
+      'Scracth' = 'scratch'
+    )
+  )
+  
+  
+  
+
+
+
+```
+
+We will also make a properly created date-time variable for making some plots\
+later.
+
+```{r}
+
+clean_data <- clean_data %>% 
+  mutate(
+    #hours_minutes_seconds = make_datetime(hours, minutes, seconds)
+    date_time = make_datetime(year, month, day, hours, minutes, seconds),
+    hms = as_hms(date_time)
+  )
+
+```
+
+We will check if in fact there's 40 records per second, as the Daily Diaries\
+are supposed to work.
+
+```{r}
+
+
+record_count_per_second <- clean_data %>%  
+  count(
+    sheep_number, 
+    year, 
+    month, 
+    day, 
+    hours, 
+    minutes, 
+    seconds
+  ) 
+
+
+
+reactable(record_count_per_second)
+
+```
+
+We can see that we have a many seconds that have more or less than 40 records.\
+We would expect seconds with less than 40 records (maybe the Daily Diary) failed\
+to make a record, but we wouldn't expect more than 40, and that's probably a\
+mistake in the data or in how the data has been cleaned.
+
+```{r}
+unique(record_count_per_second)
+```
+
+What is more alarming is the percentage of seconds with more or less than 40\
+records.
+
+```{r}
+print("Percentage of seconds with less or more than 40 records")
+sum(record_count_per_second$n != 40) /
+  nrow(record_count_per_second) * 100
+
+```
+
+```{r}
+print("Percentage of seconds with less than 40 records")
+sum(record_count_per_second$n < 40) /
+  nrow(record_count_per_second) * 100
+
+```
+
+```{r}
+print("Percentage of seconds with more than 40 records")
+sum(record_count_per_second$n > 40) /
+  nrow(record_count_per_second) * 100
+
+```
+
+For now, we will assume those seconds with less than 40 records are due to\
+Daily Diary failure and thus leave those alone.\
+But we will inspect those with more than 40 records to see if we can find a bug.
+
+We can see that there are many sheeps with more than 40 records (only 41)
+
+```{r}
+
+print("sheeps with more than 40 records per second")
+more_than_40 <- record_count_per_second %>% 
+  filter(n > 40)
+more_than_40$sheep_number %>% unique
+
+```
+
+But there are only 2 sheep with more than 41 records (and actually more than 70\
+records)
+
+```{r}
+
+print("sheep with more than 41 records per second")
+more_than_41 <- record_count_per_second %>% 
+  filter(n > 41)
+more_than_41$sheep_number %>% unique
+
+
+print("sheep with more than 70 records per second")
+more_than_70 <- record_count_per_second %>% 
+  filter(n > 70) 
+more_than_70$sheep_number %>% unique
+
+
+record_count_per_second %>% 
+  filter(sheep_number == 20 | sheep_number == 38) %>% 
+  filter(n > 42)
+
+```
+
+Maybe this is because there are files named 'bis' which I didn't take as\
+different? e.g., 'ov38' and 'ov38bis'
+
+We'll make a few plots to inspect the final data and find some potential errors.
+
+```{r}
+
+
+# we will make plots with purrr, using sheep number and day as parameters. 
+# we thus need a dataset with a combination of sheep_number and days. 
+plot_parameters <- clean_data %>% 
+  count(sheep_number, day) %>% 
+  select(-n)
+
+
+
+
+# pivot longer for using color aesthetics with acc axis
+data_for_plots <- clean_data %>% 
+  pivot_longer(
+    c(
+      'acc_x',
+      'acc_y',
+      'acc_z',
+    ), 
+    names_to = 'acc_axis', 
+    values_to = 'acc_value'
+  )
+
+
+  
+
+
+
+# plots showing Accelerometer values as a function of time. 
+plots_acc_per_sheep <- map2(
+  .x = plot_parameters$sheep_number, 
+  .y = plot_parameters$day, 
+  .f = ~{
+    data_for_plots %>% 
+      filter(sheep_number == .x) %>% 
+      filter(day == .y) %>% 
+      ggplot() + 
+      geom_line(
+        aes(
+          x = hms, 
+          y = acc_value, 
+          color = acc_axis
+        )
+      ) +
+      scale_color_viridis_d(
+        alpha = 0.6#,
+        #option = "plasma"
+      ) +
+#      scale_color_brewer() +
+      labs(
+        title = paste0("Sheep number: ", .x, "   | Day: ", .y)
+      ) +
+      theme_minimal()
+  } 
+)
+
+plotlys_acc_per_sheep <- map(plots_acc_per_sheep, ggplotly)
+
+plotlys_acc_per_sheep
+
+
+
+
+
+
+
+
+
+```
+
+We will create 5 second segments of data, for each sheep and each activity. And then we will store those 5 second segment files with the following structure:
+
+-   Activities
+
+    -   Sheep number
+
+        -   Segments
+
+For that we will first split the `clean_data` dataset into a list of\
+subdatasets, where each one contains only data from a given behaviour.
+
+```{r}
+
+# split `clean_data` into sub-datasets containing a given behaviour
+activity_datasets <- clean_data %>% 
+  group_by(behaviours) %>% 
+  group_split()
+
+
+
+
+
+
+```
+
+And we'll check the percentage of data from each behaviour:
+
+```{r}
+
+
+percentage_of_behaviours <- count(clean_data, behaviours) %>% 
+  # Compute percentage 
+  mutate(percentage = n / nrow(clean_data) * 100) %>% 
+  print
+  
+
+
+
+
+
+
+
+```
+
+```{r}
+
+behaviours_to_keep <- c(
+  "eating", 
+  "resting", 
+  "vigilance"
+)
+
+kept_activities <- activity_datasets %>% 
+  keep(
+    ~ unique(.x$behaviours) %in% behaviours_to_keep
+  )
+
+
+
+# Daily Diaries frequency
+DD_Hz <- 40
+
+# Seconds per each segment 
+seconds_per_segment <- 5
+
+# Amount of rows per segment 
+nrow_per_segment <- DD_Hz * seconds_per_segment
+
+.x <- kept_activities[[1]]
+
+
+
+# we will make multiples of DD_Hz to "chop" the each `kept_activities` tibble
+# into `nrow_per_segment` rows datasets. For that we will slice
+# each `kept_activities` tibble by indexing it by multiples of 
+# `nrow_per_segment`. To make things simpler we will first drop some 
+# of the last rows to make the `nrow(kept_activities)` a multiple of 
+# nrow_per_segment.
+
+n_segments <- nrow(.x) / nrow_per_segment
+
+.x_floor <- .x %>% 
+  # drop last rows
+  slice(
+    1:(floor(n_segments) * nrow_per_segment)
+  )
+
+
+
+chop_data <- function(dataset, n_segments, nrow_per_segment){
+  
+  ###### nrow_per_segment could be derived from n_segments and nrow(dataset)
+  
+  n_segments_floor <- floor(n_segments)
+  
+  # this seems superfluous if we do the n_segments_floor
+  # dataset_floor <-  dataset %>% 
+  #   slice(
+  #     1:(floor(n_segments) * nrow_per_segment)
+  #   )
+  
+  output <- list()   
+  for (i in 1:n_segments_floor) {
+    output[[i]] <-  dataset %>% # before dataset_floor 
+      slice(
+        ((i - 1) * nrow_per_segment + 1):(i * nrow_per_segment)
+      )
+  
+  
+  }
+  
+  return(output)
+   
+}
+
+
+
+chop_data2 <- function(
+  dataset, 
+  n_segments, 
+  nrow_per_segment, 
+  keep_remaining # should default to TRUE?
+) {
+  
+  
+  
+  ###### nrow_per_segment could be derived from n_segments and nrow(dataset)
+  
+  n_segments_floor <- floor(n_segments)
+  
+  # this seems superfluous if we do the n_segments_floor
+  # dataset_floor <-  dataset %>% 
+  #   slice(
+  #     1:(floor(n_segments) * nrow_per_segment)
+  #   )
+  
+  output <- list()   
+  for (i in 1:n_segments_floor) {
+    segment_head <- ((i - 1) * nrow_per_segment + 1)
+    segment_tail <- (i * nrow_per_segment)
+    
+    output[[i]] <-  dataset %>% # before dataset_floor 
+      slice(segment_head:segment_tail)
+    
+  }
+  
+  if (keep_remaining == TRUE) {
+    output[[i + 1]] <- dataset %>% 
+      slice(segment_tail:nrow(dataset))
+    print("Kept remaining rows inside a ", nrow(output[[i + 1]])," row segment")
+  } 
+  
+  
+  
+  return(output)
+   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+DESCRIPTION OF BEHAVIOURS.

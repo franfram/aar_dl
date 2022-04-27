@@ -1,0 +1,12 @@
+---
+title: "About"
+output:
+  workflowr::wflow_html:
+    toc: false
+editor_options:
+  chunk_output_type: console
+---
+
+This project will attempt to build an Animal-Activity-Recognition system using Deep Learning.
+
+The first approach will be using Convolutional Neural Nets. We will turn the accelerometer and magnetometer data into an image and then use a pretrained CNN to classify them.

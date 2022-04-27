@@ -1,2 +1,5 @@
 # AAR-DL
-Animal Activity Recognition using Deep Learning
+
+A [workflowr][] project.
+
+[workflowr]: https://github.com/workflowr/workflowr
