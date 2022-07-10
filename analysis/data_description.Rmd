@@ -4,10 +4,14 @@ output: html_document
 bibliography: references.bib
 ---
 
+
+
+
 TO DO:
 
 -   Describe behaviours and make explicit how you end up grouping them. (e.g., eating vs eating up? vigilance vs vigilance down? if up and down mean standing or laying down, vigilance makes sense but eating doesn't). ASK
 -   files named 'bis'?? ASK
+-   Ask pajaro about vedba and odba again (deleted answer)
 
 ```{r}
 options(tidyverse.quiet = TRUE)

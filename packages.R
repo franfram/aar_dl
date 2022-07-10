@@ -10,3 +10,6 @@ library(reactable)
 library(paint)
 library(plotly)
 library(hms)
+
+## Conflicted setup
+conflict_prefer("filter", "dplyr")

@@ -1,0 +1,329 @@
+
+To do 
+- add Mag x y z. In a destructive manner?? 
+```{r}
+
+
+
+
+sep_files  <- tar_read(sep_files)
+data_target <- tar_read(sep_files)
+dec_files <- tar_read(dec_files)
+
+
+
+
+
+  if (exists("sep_files")) { 
+
+    vars_to_keep <- c(
+      'file_name',
+      'Acc_x',
+      'Acc_y',
+      'Acc_z', 
+      'Mag_x',
+      'Mag_y',
+      'Mag_z',
+      "Pitch.angle", 
+      "Roll.angle", 
+      'DateTime', 
+      'Hours',
+      'Minutes',
+      'Seconds',
+      'Event.no.',
+      'Behaviours'
+    )
+  } else if (exists("dec_files")) {
+  
+    vars_to_keep <- c(
+      'file_name',
+      'Acc_x',
+      'Acc_y',
+      'Acc_z', 
+      'Mag_x',
+      'Mag_y',
+      'Mag_z',
+      "Pitch.angle", 
+      "Roll.angle", 
+      'DateTime', 
+      'Hours',
+      'Minutes',
+      'Seconds',
+      'Event.no.',
+      'Behaviours'
+    )
+  }
+
+
+
+  # Read and clean data 
+  raw_data <- data_target %>% 
+    # Read files
+    map(
+      read_csv, 
+      id = "file_name",
+      col_types = cols()
+    ) %>%
+    # Select columns to keep
+    map(
+      ~ select(
+        .x,
+        any_of(vars_to_keep)
+      )
+    ) %>% 
+    # Add sheep name column
+    map(
+      ~ add_column(
+          .x, 
+          sheep_name = str_extract(
+            .x$file_name,
+            "ov.."
+          )
+      )
+    ) %>% 
+    # Add sheep number column 
+    map(
+      ~ add_column(
+          .x, 
+          sheep_number = as.double(
+            str_extract(
+              .x$sheep_name,
+              "[0-9]+"
+            )
+          )
+      )
+    ) %>% 
+    # Add Year variable
+    map(
+      ~ mutate(
+          .x, 
+          year = year(DateTime)
+      )
+    ) %>% 
+    # Add Month variable
+    map(
+      ~ mutate(
+          .x, 
+          month = month(DateTime)
+      )
+    ) %>% 
+    # Add Day variable
+    map(
+      ~ mutate(
+          .x, 
+          day = day(DateTime)
+      )
+    ) %>%
+    # Remove DateTime var
+    map(
+      ~ select(
+          .x,
+          -'DateTime'
+      )
+    ) %>% 
+    # Rename all vars to lower-case names to avoid problems
+    map(
+      ~ rename_all(
+          .x, 
+          tolower
+      )
+    ) %>% 
+    # Some `second` variables are not numeric, so convert them 
+    map(
+      ~ mutate(
+        .x, 
+        seconds = as.double(seconds)
+      )
+    ) %>% 
+    # Add column indicating video name
+    map(
+      ~ mutate(
+          .x,
+          video_name = str_extract(
+            .x$file_name, 
+            pattern = "video.."
+          )
+      )
+    ) %>% 
+    # Add column indicating video number
+    map(
+      ~ mutate(
+          .x, 
+          video_number = as.double(
+            str_extract(
+              .x$video_name, 
+              pattern = "[0-9]+"
+            ) 
+          )  
+      )
+    ) %>% 
+    # Bind rows to form a single tibble
+    bind_rows #%>% 
+    #suppressMessages()
+
+
+
+
+## Remove rows where there's no acc data
+vars_with_na <- 
+
+raw_data <- raw_data[complete.cases(raw_data[, c("mag_x", "mag_y", "mag_z", "roll.angle", "behaviours")]),]
+
+
+
+
+
+
+sum(is.na(raw_data$mag_x))
+sum(is.na(raw_data$pitch.angle))
+sum(is.na(raw_data$roll.angle))
+
+
+colnames(raw_data)
+```
+
+
+Chunk to test ratio of data with all variables (mag included) vs no mag variables. 
+```{r}
+
+data_target  <- tar_read(dec_files)
+
+
+  vars_to_keep <- c(
+    'file_name',
+    'Acc_x',
+    'Acc_y',
+    'Acc_z', 
+    # 'Mag_x',
+    # 'Mag_y',
+    # 'Mag_z',
+    # "Pitch.angle", 
+    # "Roll.angle", 
+    'DateTime', 
+    'Hours',
+    'Minutes',
+    'Seconds',
+    'Event.no.',
+    'Behaviours'
+  )
+
+  # Wrangle September files
+  raw_data <- data_target %>% 
+    # Read files
+    map(
+      read_csv, 
+      id = "file_name",
+      col_types = cols()
+    ) #%>%
+#  
+
+# If else 
+# wrangled_data[[2]] doesn't have magotometer values, so we will just
+# drop that file. 
+    raw_data <- raw_data[-2] 
+
+map(raw_data2, ~{"Mag_x" %in% colnames(.x)}) 
+map(raw_data2, ~{"Mag_y" %in% colnames(.x)}) 
+map(raw_data2, ~{"Mag_z" %in% colnames(.x)}) 
+
+    raw_data <- raw_data %>% 
+    # Select columns to keep
+    map(
+      ~ select(
+        .x,
+        all_of(vars_to_keep)
+      )
+    ) %>% 
+    # Add sheep name column
+    map(
+      ~ add_column(
+          .x, 
+          sheep_name = str_extract(
+            .x$file_name,
+            "ov.."
+          )
+      )
+    ) %>% 
+    # Add sheep number column 
+    map(
+      ~ add_column(
+          .x, 
+          sheep_number = as.double(
+            str_extract(
+              .x$sheep_name,
+              "[0-9]+"
+            )
+          )
+      )
+    ) %>% 
+    # Add Year variable
+    map(
+      ~ mutate(
+          .x, 
+          year = year(DateTime)
+      )
+    ) %>% 
+    # Add Month variable
+    map(
+      ~ mutate(
+          .x, 
+          month = month(DateTime)
+      )
+    ) %>% 
+    # Add Day variable
+    map(
+      ~ mutate(
+          .x, 
+          day = day(DateTime)
+      )
+    ) %>%
+    # Remove DateTime var
+    map(
+      ~ select(
+          .x,
+          -'DateTime'
+      )
+    ) %>% 
+    # Rename all vars to lower-case names to avoid problems
+    map(
+      ~ rename_all(
+          .x, 
+          tolower
+      )
+    ) %>% 
+    # Add column indicating video name
+    map(
+      ~ mutate(
+          .x,
+          video_name = str_extract(
+            .x$file_name, 
+            pattern = "video.."
+          )
+      )
+    ) %>% 
+    # Add column indicating video number
+    map(
+      ~ mutate(
+          .x, 
+          video_number = as.double(
+            str_extract(
+              .x$video_name, 
+              pattern = "[0-9]+"
+            ) 
+          )  
+      )
+    ) %>% 
+    # Bind rows to form a single tibble
+    bind_rows #%>% 
+    #suppressMessages()
+
+
+
+
+
+
+
+
+
+
+```
