@@ -70,7 +70,7 @@ plot_wrangled_full_data <- function(wrangled_full_data) {
     } 
   )
 
-  plotlys_acc_per_sheep <- map(plots_acc_per_sheep, ggplotly)
+  #plotlys_acc_per_sheep <- map(plots_acc_per_sheep, ggplotly)
 
   return(
     plots_acc_per_sheep

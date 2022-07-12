@@ -1,0 +1,1577 @@
+---
+title: "Data description"
+output: html_document
+bibliography: references.bib
+---
+
+
+
+vedba y odba son solo distintas formas de sumar los ejes de los acelerometros\ 
+pitch y roll son derivados de acelerom y magnetom. 
+
+walk eating, resting, fast walk, main behaviours to classify
+
+TO DO:
+
+-   Describe behaviours and make explicit how you end up grouping them. (e.g., eating vs eating up? vigilance vs vigilance down? if up and down mean standing or laying down, vigilance makes sense but eating doesn't). ASK
+-   files named 'bis'?? ASK
+
+-   Find out why some .csv (`raw_dic[c(31,35,37)]`) have `Pitch angle` and `Pitch.angle` vars, same with `Roll angle` and `Roll.angle`. Maybe plot them to see how they differ? maybe read the manual? 
+
+HAVE IN MIND:
+
+-   clean_data\$sheep_name %\>% unique %\>% length is not the same as.
+
+    clean_data\$sheep_number %\>% unique %\>% length, because of this "bis" files. We'll use sheep_number to select individuals for now.
+
+Notes for reader:
+
+-   Git
+
+    -   Cloned (downloaded) the repo from github by running `git clone https://github.com/franfram/AAR-DL.git` in your terminal (for that, ensure you first have Git installed)
+
+<!-- -->
+
+-   Working directory
+
+    -   Ensure you opened the Rproject
+
+-   Docker
+
+    -   Docker instructions (MAYBE A docker-readme file? .rmd or .md?)
+
+-   Renv
+
+    -   Ensure you run renv::init() and chooe option 1: Restore the project from the lockfile.
+
+-   Targets
+
+```{=html}
+<!-- -->
+```
+    -   You can inspect the results available (i.e., the 'targets' available) by running targets::tar_manifest() and then running targets::tar_read(TARGET_NAME).
+
+    -   If you want to check
+
+Options setup
+
+```{r}
+options(tidyverse.quiet = TRUE)
+```
+
+Chunk setup
+
+```{r}
+
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  include = TRUE,
+  eval = TRUE,
+  cols.print = 7,
+  rows.print = 7
+)
+
+```
+
+Library setup
+
+```{r setup}
+library(workflowr) 
+library(tidyverse)
+library(fs)
+library(here)
+library(lubridate)
+library(reactable)
+library(paint)
+library(hms)
+
+```
+
+Conflicted setup
+
+```{r}
+library(conflicted)
+
+conflict_prefer("filter", "dplyr")
+conflict_prefer("year", "lubridate")
+```
+
+Data came as .csv files. The original repo had two folders for data: "sep" and\
+"dic", not sure why nor which files where on each folder (may be able to know\
+this later). We'll suppouse those files starting with "sep" where those on the\
+"sep" folder and those starting with "video" where those on the "dic" folder.\
+(and that's how I organized the files on this repo).
+
+Update: From the original paper where the data came from [@ruiz-suarez2022], we can see that "sep" means "September" and "dic" means "December".
+
+"After discarding the videos that had not captured sheep or those for which\
+acceleration data was not available, a total of 18 videos from eight different\
+animals were obtained from the session of September and a total of 49 videos\
+from 17 different animals from the session of December."
+
+Files are named indicating number of video (e.g., 'video10' for the 10th video) and sheep number (e.g. ov18 for then 18th sheep)
+
+```{r list files}
+
+## get paths of files
+sep_paths <- dir_ls(path = here("data", "sep"), glob = "*.csv") %>% 
+  print()
+dic_paths <- dir_ls(path = here("data", "dic"), glob = "*.csv") %>% 
+  print()
+
+```
+
+
+
+
+ 
+
+
+
+
+
+
+September files all contain the same amount of columns (27).
+
+```{r raw data vars, message=FALSE, warning=FALSE}
+
+raw_sep <- sep_paths %>% 
+  map(
+    read_csv, 
+    id = "file_name_original",
+    col_types = cols()
+  ) %>% 
+  suppressMessages
+
+map(raw_sep, ncol) %>% 
+  unique()
+
+
+
+
+
+
+
+
+```
+
+And the column names are
+
+```{r}
+raw_sep[[1]] %>% 
+  colnames
+
+
+
+```
+
+Whereas december files have different amount of cols
+
+
+```{r}
+raw_dic <- dic_paths %>% 
+  map(
+    read_csv,
+    id = "file_name_original",
+    col_types = cols()
+  ) %>% 
+  suppressMessages
+
+map(raw_dic, ncol) %>% 
+  unique()
+
+map_dfc(raw_dic, ncol) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "file_name_original",
+    values_to = "ncol"
+  ) %>% View()
+
+
+
+```
+
+```{r} 
+
+
+ncol(raw_dic[[37]])
+
+
+
+# hacer algo con tally o count para ver cuantos files tienen cuantas columnas
+# map(raw_dic, ncol)
+```
+
+which seems to be due to some files lacking some variables (those with less than 27 columns), but there's a particular file having 28 columns (video2_ov9).
+
+```{r}
+
+
+dic_paths[[37]]
+ncol(raw_dic[[37]])
+colnames(raw_dic[[37]])
+```
+
+This file seems to have 2 different Pitch angle vars with different values.
+
+Still, we are only interested in accelerometer, date-time, and behaviour variables, and thus will just keep those. We will also modify the date-time variables and add a few other useful ones:
+
+-   sheep name (e.g., ov18)
+
+-   sheep number (e.g., 18)
+
+-   video name (e.g., video 21)
+
+-   video number (e.g., 21)
+
+We will also keep `Event.no.` column. This seems to be something recorded by\
+the Daily Diaries that indicates the record. This column will be useful since we\
+will want to make sure we have the right ordering of rows inside each second\
+(remember these Daily Diaries makes 40 records per second, 40Hz).
+
+(During the first iteration, we won't use magnetometer data. Which will allow us to avoid wrangling problems due to many December files missing magnetometer data).
+
+```{r}
+colnames(raw_sep[[1]])
+```
+
+
+
+```{r}
+# read paths stored in `sep_paths` into dataframes
+sep_dfs <- sep_paths %>% 
+  map(
+    read_csv, 
+    id = "file_name_original",
+    col_types = cols()
+  ) %>% 
+  suppressMessages
+
+
+
+
+```
+
+Clean data
+pitch angle is derived from magnetometer and accelerometer
+
+```{r}
+# seconds = 200
+# pitch  <- raw_data_sep %>% 
+#   slice(1:200) %>%
+#   pull('pitch.angle') 
+
+# time = seq_len(seconds)
+# time
+# pitch
+
+# qplot(x = time, y = pitch, geom = "line")
+
+# map(raw_dic, 
+# ~'Roll.angle' %in% colnames(.x))
+
+# map(raw_dic[c(31, 35, 37)], 
+# ~'Roll.angle' %in% colnames(.x))
+
+# map(raw_dic[c(31, 35, 37)], 
+
+
+# raw_dic_weird <- c(31, 35, 37)
+```
+
+
+
+
+
+```{r}
+
+vars_to_keep_sep <- c(
+  'file_name_original',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  # 'Mag_x',
+  # 'Mag_y',
+  # 'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'#,
+  # 'Pitch.angle',
+  # 'Pitch.smoothed.angle',
+  # 'Roll.angle' 
+  # 'Roll.smoothed.angle' 
+)
+
+
+vars_to_keep_dic <- c(
+  'file_name_original',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  # 'Mag_x',
+  # 'Mag_y',
+  # 'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'#,
+  # 'Pitch.angle',
+  # 'Pitch.smoothed.angle',
+  # 'Roll.angle' 
+  # 'Roll.smoothed.angle'
+)
+
+vars_to_keep_dic2 <- c(
+  'file_name_original',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  # 'Mag_x',
+  # 'Mag_y',
+  # 'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'#,
+  # 'Pitch angle',
+  # 'Pitch.smoothed.angle',
+  # 'Roll angle' 
+  # 'Roll.smoothed.angle'
+)
+########## probably should use purrr::when 
+# Wrangle September files
+raw_data_sep <- sep_paths %>% 
+  # Read files
+  map(
+    read_csv, 
+    id = "file_name_original",
+    col_types = cols()
+  ) %>%
+  # Select columns to keep
+  map(
+    ~ select(
+      .x,
+      vars_to_keep_sep
+    )
+  ) %>% 
+  # Add sheep name column
+  map(
+    ~ add_column(
+        .x, 
+        sheep_name = str_extract(
+          .x$file_name_original,
+          "ov.."
+        )
+    )
+  ) %>% 
+  # Add sheep number column 
+  map(
+    ~ add_column(
+        .x, 
+        sheep_number = as.double(
+          str_extract(
+            .x$sheep_name,
+            "[0-9]+"
+          )
+        )
+    )
+  ) %>% 
+  # Add Year variable
+  map(
+    ~ mutate(
+        .x, 
+        year = year(DateTime)
+    )
+  ) %>% 
+  # Add Month variable
+  map(
+    ~ mutate(
+        .x, 
+        month = month(DateTime)
+    )
+  ) %>% 
+  # Add Day variable
+  map(
+    ~ mutate(
+        .x, 
+        day = day(DateTime)
+    )
+  ) %>%
+  # Remove DateTime var
+  map(
+    ~ select(
+        .x,
+        -'DateTime'
+    )
+  ) %>% 
+  # Rename all vars to lower-case names to avoid problems
+  map(
+    ~ rename_all(
+        .x, 
+        tolower
+    )
+  ) %>% 
+  # Add column indicating video name
+  map(
+    ~ mutate(
+        .x,
+        video_name = str_extract(
+          .x$file_name_original, 
+          pattern = "video.."
+        )
+    )
+  ) %>% 
+  # Add column indicating video number
+  map(
+    ~ mutate(
+        .x, 
+        video_number = as.double(
+          str_extract(
+            .x$video_name, 
+            pattern = "[0-9]+"
+          ) 
+        )  
+    )
+  ) %>% 
+  # Bind rows to form a single tibble
+  bind_rows %>% 
+  suppressMessages
+  
+
+
+# Wrangle December files
+## December files have some problems where a few variables don't have consistent classes
+## across files. We will have to add a few steps to correct this. 
+raw_data_dic <- dic_paths %>% 
+  # Read files
+  map(
+    read_csv, 
+    id = "file_name_original",
+    col_types = cols()
+  ) %>%
+  # Select columns to keep
+  map(
+    ~ select(
+      .x,
+      vars_to_keep_dic
+    )
+  ) %>% 
+  # Add sheep name column
+  map(
+    ~ add_column(
+        .x, 
+        sheep_name = str_extract(
+          .x$file_name_original,
+          "ov.."
+        )
+    )
+  ) %>% 
+  # Add sheep number column 
+  map(
+    ~ add_column(
+        .x, 
+        sheep_number = as.double(
+          str_extract(
+            .x$sheep_name,
+            "[0-9]+"
+          )
+        )
+    )
+  ) %>% 
+  # Add Year variable
+  map(
+    ~ mutate(
+        .x, 
+        year = year(DateTime)
+    )
+  ) %>% 
+  # Add Month variable
+  map(
+    ~ mutate(
+        .x, 
+        month = month(DateTime)
+    )
+  ) %>% 
+  # Add Day variable
+  map(
+    ~ mutate(
+        .x, 
+        day = day(DateTime)
+    )
+  ) %>%
+  # Remove DateTime var
+  map(
+    ~ select(
+        .x,
+        -'DateTime'
+    )
+  ) %>% 
+  # Rename all vars to lower-case names to avoid problems
+  map(
+    ~ rename_all(
+        .x, 
+        tolower
+    )
+  ) %>% 
+  # Coerce to consistent classes
+  map(
+    ~ mutate_at(
+        .x,
+        c('hours', 'minutes', 'seconds'),
+        as.double
+      ) 
+  ) %>%  
+  # Add column indicating video name
+  map(
+    ~ mutate(
+        .x,
+        video_name = str_extract(
+          .x$file_name_original, 
+          pattern = "video.."
+        )
+    )
+  ) %>% 
+  # Add column indicating video number
+  map(
+    ~ mutate(
+        .x, 
+        video_number = as.double(
+          str_extract(
+            .x$video_name, 
+            pattern = "[0-9]+"
+          ) 
+        )
+    )
+  ) %>% 
+  # Bind rows to form a single tibble
+  bind_rows %>% 
+  suppressMessages
+  
+
+
+
+```
+
+Now we have the datasets cleaned:
+
+-   September data
+
+```{r}
+reactable(raw_data_sep)
+
+
+```
+
+-   December data
+
+
+
+
+```{r}
+
+
+
+
+```
+
+
+```{r}
+
+reactable(raw_data_dic)
+
+```
+
+Now we will merge both datasets, and check which columns contain NAs
+
+```{r}
+
+
+clean_data <- bind_rows(
+  raw_data_dic, 
+  raw_data_sep
+) 
+ 
+
+
+print("Amount of NAs in each column")
+nas <- colSums(is.na(clean_data)) %>% print()
+
+print("Percentage of NAs relative to total rows in dataset")
+nas / nrow(clean_data) * 100 
+
+
+```
+
+DESCRIBE BEHAVIOURS
+
+```{r}
+unique(clean_data$behaviours)
+
+```
+
+We can see that only the 'behaviours' column contain NAs and they amount to\
+about 5% of the entries.
+
+We will remove this NAs for the time being, but we will check this again later.\
+We will also change the order of the columns and arrange the dataset.
+
+```{r}
+clean_data <- clean_data %>% 
+  # Remove rows containing NAs
+  drop_na %>% 
+  # Change order of columns
+  select(
+    'sheep_name', 
+    'sheep_number', 
+    'year', 
+    'month', 
+    'day', 
+    'hours', 
+    'minutes', 
+    'seconds',
+    'event.no.',
+    'acc_x', 
+    'acc_y',
+    'acc_z', 
+    'behaviours',
+    'video_name', 
+    'video_number',
+    'file_name_original'
+  ) %>% 
+  # Sort data
+  arrange(
+    sheep_number, 
+    year, 
+    month, 
+    day, 
+    hours, 
+    minutes, 
+    seconds,
+    event.no.
+  ) %>% 
+  # Rename behaviours with tidyverse style + correct duplicated ones  
+  mutate(
+    behaviours = recode(
+      behaviours, 
+      'Search' = 'search', 
+      'Eating' = 'eating', 
+      'Vigilance' = 'vigilance', 
+      'Fast.walk' = 'fast_walk', 
+      'Walk' = 'walk', 
+      'Fast.Walk' = 'fast_walk', 
+      'Scratch' = 'scratch', 
+      'Eating.up' = 'eating',
+      'Vigilance.down' = 'vigilance', 
+      'Resting' = 'resting', 
+      'Shake' = 'shake', 
+      'Scracth' = 'scratch'
+    )
+  )
+  
+  
+  
+
+
+
+```
+
+We will also make a properly created date-time variable for making some plots\
+later.
+
+```{r}
+
+clean_data <- clean_data %>% 
+  mutate(
+    #hours_minutes_seconds = make_datetime(hours, minutes, seconds)
+    date_time = make_datetime(year, month, day, hours, minutes, seconds),
+    hms = as_hms(date_time)
+  )
+
+```
+
+We will check if in fact there's 40 records per second, as the Daily Diaries\
+are supposed to work.
+
+```{r}
+
+
+record_count_per_second <- clean_data %>%  
+  count(
+    sheep_number, 
+    year, 
+    month, 
+    day, 
+    hours, 
+    minutes, 
+    seconds
+  ) 
+
+
+
+reactable(record_count_per_second)
+
+```
+
+We can see that we have a many seconds that have more or less than 40 records.\
+We would expect seconds with less than 40 records (maybe the Daily Diary) failed\
+to make a record, but we wouldn't expect more than 40, and that's probably a\
+mistake in the data or in how the data has been cleaned.
+
+```{r}
+unique(record_count_per_second)
+```
+
+What is more alarming is the percentage of seconds with more or less than 40\
+records.
+
+```{r}
+print("Percentage of seconds with less or more than 40 records")
+sum(record_count_per_second$n != 40) /
+  nrow(record_count_per_second) * 100
+
+```
+
+```{r}
+print("Percentage of seconds with less than 40 records")
+sum(record_count_per_second$n < 40) /
+  nrow(record_count_per_second) * 100
+
+```
+
+```{r}
+print("Percentage of seconds with more than 40 records")
+sum(record_count_per_second$n > 40) /
+  nrow(record_count_per_second) * 100
+
+```
+
+For now, we will assume those seconds with less than 40 records are due to\
+Daily Diary failure and thus leave those alone.\
+But we will inspect those with more than 40 records to see if we can find a bug.
+
+We can see that there are many sheeps with more than 40 records (only 41)
+
+```{r}
+
+print("sheeps with more than 40 records per second")
+more_than_40 <- record_count_per_second %>% 
+  filter(n > 40)
+more_than_40$sheep_number %>% unique
+
+```
+
+But there are only 2 sheep with more than 41 records (and actually more than 70\
+records)
+
+```{r}
+
+print("sheep with more than 41 records per second")
+more_than_41 <- record_count_per_second %>% 
+  filter(n > 41)
+more_than_41$sheep_number %>% unique
+
+
+print("sheep with more than 70 records per second")
+more_than_70 <- record_count_per_second %>% 
+  filter(n > 70) 
+more_than_70$sheep_number %>% unique
+
+
+record_count_per_second %>% 
+  filter(sheep_number == 20 | sheep_number == 38) %>% 
+  filter(n > 42)
+
+```
+
+Maybe this is because there are files named 'bis' which I didn't take as\
+different? e.g., 'ov38' and 'ov38bis'
+
+We'll make a few plots to inspect the final data and find some potential errors.
+
+```{r}
+
+
+# we will make plots with purrr, using sheep number and day as parameters. 
+# we thus need a dataset with a combination of sheep_number and days. 
+plot_parameters <- clean_data %>% 
+  count(sheep_number, day) %>% 
+  select(-n)
+
+
+
+
+# pivot longer for using color aesthetics with acc axis
+data_for_plots <- clean_data %>% 
+  pivot_longer(
+    c(
+      'acc_x',
+      'acc_y',
+      'acc_z',
+    ), 
+    names_to = 'acc_axis', 
+    values_to = 'acc_value'
+  )
+
+
+  
+
+
+
+# plots showing Accelerometer values as a function of time. 
+plots_acc_per_sheep <- map2(
+  .x = plot_parameters$sheep_number, 
+  .y = plot_parameters$day, 
+  .f = ~{
+    data_for_plots %>% 
+      filter(sheep_number == .x) %>% 
+      filter(day == .y) %>% 
+      ggplot() + 
+      geom_line(
+        aes(
+          x = hms, 
+          y = acc_value, 
+          color = acc_axis
+        )
+      ) +
+      scale_color_viridis_d(
+        alpha = 0.6#,
+        #option = "plasma"
+      ) +
+#      scale_color_brewer() +
+      labs(
+        title = paste0("Sheep number: ", .x, "   | Day: ", .y)
+      ) +
+      theme_minimal()
+  } 
+)
+
+#plotlys_acc_per_sheep <- map(plots_acc_per_sheep, ggplotly)
+
+#plotlys_acc_per_sheep
+
+
+
+plots_acc_per_sheep
+
+
+
+
+
+
+```
+
+
+
+
+
+we will create 5 second segments of data, for each sheep and each activity. and then we will store those 5 second segment files with the following structure:
+
+-   activities
+
+    -   sheep number
+
+        -   segments
+
+
+For that we will first add a new variable indicating behaviour with a number\ 
+(where 1 is the behaviour with the biggest percentage of data, and so on) which\ 
+will be useful for storing the segments and we will also remove a few variables\
+that we won't need for building the images.
+
+```{r}
+# add variable that assigns a number to each behaviour
+clean_data  <- clean_data %>% 
+  mutate(
+    behaviours_n = recode(
+      behaviours,
+      'eating' = 1, 
+      'resting' = 2, 
+      'vigilance' = 3, 
+      'walk' = 4, 
+      'search' = 5, 
+      'fast_walk' = 6, 
+      'scratch' = 7, 
+      'shake' = 8
+    )
+  ) %>%
+  # select only the columns we need 
+  select(
+    'sheep_name', 
+    'sheep_number', 
+    'year', 
+    'month', 
+    'day', 
+    'hours', 
+    'minutes', 
+    'seconds',
+    'event.no.',
+    'acc_x', 
+    'acc_y',
+    'acc_z', 
+    'behaviours',
+    'behaviours_n'
+  ) 
+
+```
+
+
+
+
+
+Then we will split the `clean_data` dataset into a list of subdatasets, where\
+each one contains only data from a given behaviour.
+
+```{r}
+
+# split `clean_data` into sub-datasets containing a given behaviour
+behaviour_datasets <- clean_data %>% 
+  group_by(behaviours) %>% 
+  group_split()
+
+
+
+
+```
+
+But first we'll check the percentage of data from each behaviour in order to\
+decide which behaviours to keep :
+
+```{r}
+
+
+percentage_of_behaviours <- count(clean_data, behaviours) %>% 
+  # Compute percentage 
+  mutate(percentage = n / nrow(clean_data) * 100) %>% 
+  arrange(desc(percentage)) %>%
+  print
+
+
+
+# map a function that will keep the first n behaviours, with n = c(3:8)
+behaviours_to_keep <- 3:8  %>% 
+  map(
+    .f = ~ {
+      percentage_of_behaviours %>% 
+        head(.x) %>% 
+        pull(behaviours)
+    } 
+  )
+ 
+
+
+
+```
+
+
+
+For now we will only keep the following behaviours due to their high percentage
+```{r}
+
+kept_behaviours <- list()
+for (i in 1:length(behaviours_to_keep)) {
+  kept_behaviours[[i]] <- behaviour_datasets %>% 
+    keep(
+      ~ unique(.x$behaviours) %in% behaviours_to_keep[[i]]
+    )
+}  
+ 
+
+```
+
+Now it's time to chop the remaining datasets into 5 second segments. For that,\
+we will define a custom "chopping" function.
+
+```{r}
+
+#' @title "Chop" data into segments. 
+#' @description Iteratively slice (chop) a dataset into segments (sub-datasets)
+#'  of predefined length. 
+#' @return `output` list containing each segment sub-dataset.  
+#' @param dataset, dataset to be "chopped"
+#' @param nrow_per_segment, predefined N of rows of each segment
+#' @param keep_remaining, logical indicating if remaining rows of `dataset` are
+#'   to be kept, in the case where the number of segments is not a whole number.
+#'   If TRUE (default), the last segment will contain the remaining rows. If 
+#'   FALSE, remaining rows will be dropped. 
+
+chop_data <- function(
+  dataset, 
+  nrow_per_segment, 
+  keep_remaining = TRUE 
+) {
+  
+  # Define number of segments based on nrow_per_segment argument 
+  n_segments <- nrow(dataset) / nrow_per_segment
+  # round-to-lower the number of segments to ensure same-size segments 
+  n_segments_floor <- floor(n_segments)
+ 
+  
+  # Iteratively slice `dataset` to create the chopped dataset 
+  output <- list()   
+  for (i in 1:n_segments_floor) {
+    segment_head <- ((i - 1) * nrow_per_segment + 1)
+    segment_tail <- (i * nrow_per_segment)
+    
+    output[[i]] <-  dataset %>% #  
+      slice(segment_head:segment_tail)
+    
+  }
+  
+  print(str_glue("chopped the dataset into {n_segments_floor} segments"))
+
+  # If `keep_remaining == TRUE, keep remaining rows in an 
+  # extra (and smaller) segment 
+  if (keep_remaining == TRUE) {
+    output[[i + 1]] <- dataset %>% 
+      slice(segment_tail:nrow(dataset))
+    
+    print(
+      str_glue(
+        "Kept remaining rows inside an extra {nrow(output[[i + 1]])} segment" 
+      )
+    )
+
+
+  } 
+  
+  # Return results
+  return(output)
+   
+}
+
+
+```
+
+And now we chop the datasets with the chosen behaviours into `DD_Hz` \*\
+`seconds_per_segment` row length segments.
+
+```{r}
+
+
+# Daily Diaries frequency
+DD_Hz <- 40
+
+# Seconds per each segment 
+seconds_per_segment <- 5
+
+# Amount of rows per segment 
+nrow_per_segment <- DD_Hz * seconds_per_segment
+
+
+
+# Chop (dropping remaining rows) data into segments. 
+## Inside each behaviours data set (kept_behaviours[[i]]) we will first group
+## by `sheep_number` and then chop the data into segments.
+chopped_datasets <- kept_behaviours[[1]] %>%
+  map(
+    .x, 
+    .f = ~{ .x %>% 
+      group_by(sheep_number) %>% 
+      group_map(
+        .x, 
+        .f = ~ { 
+          chop_data(
+            .x,
+            nrow_per_segment = nrow_per_segment,
+            keep_remaining = FALSE
+          )
+        }, 
+        .keep = TRUE
+      )
+    }
+  )
+
+
+
+
+
+
+
+
+## now we need to store the `chopped_datasets`, we could do this with a loop.  
+## but probably it's better to define a chop_and_store() to do this. The
+## function should have a a parameter called 'parent_directory_name' argument
+## where all the new folders and datasets will be stored. That way we can make
+## many different parent directories with different behaviours. The function 
+## could create dirs with fs:: and save the tibbles as .csv with 
+## readr::write_csv(). The function could also write a readme file that 
+## describes which behaviours the parent directory contains. 
+
+
+```
+
+
+Now `chopped_datasets` is a list of 3 levels of data. The first level is the \
+behaviours. The second level is the sheep number. The third level is the \
+segments.
+
+
+
+Function to chop and store
+
+
+maybe name with A, B, C, D... the combinations of behaviours_to_keep
+
+A: keeps 'eating', 'resting', 'vigilance'
+maybe the rest will be in decreasing order of percentage of data. 
+
+
+
+
+```{r}
+
+
+#dir_delete(here("data", "python_1"))
+
+
+
+
+
+
+
+# Create directories. The parent folder is going to be 
+# named "python_1". This folder will contain sub-folders with names contained in
+# `behaviours_to_keep[[1]]`. And then inside of each of these sub-folders, there
+# will be folders named after the sheep number. Inside of each of these sheep 
+# number folders, we will store the chopped data.
+
+
+for (i in seq_along(behaviours_to_keep[[1]])) {
+
+  sheep_identifier <- kept_behaviours[[1]][[i]]$sheep_number %>% unique
+  
+  for (j in seq_along(sheep_identifier)) { 
+
+    # Create behaviour sub-folders and sheep_number 
+    # sub-sub-folders and store file_path for writing csvs
+    dir_create(
+      here(
+        "data", 
+        "python_1", 
+        str_glue("b_", i),# before behaviours_to_keep[[1]][[i]], 
+        str_glue("sheep_", sheep_identifier[[j]])
+      )
+    )
+
+  }    
+}
+
+
+
+# store chopped data
+for (i in seq_along(behaviours_to_keep[[1]])) {
+
+  sheep_identifier <- kept_behaviours[[1]][[i]]$sheep_number %>% unique
+  
+  for (j in seq_along(sheep_identifier)) { 
+
+    for (k in seq_along(chopped_datasets[[i]][[j]])) {
+    
+    # write `chopped_data` segments to csv files
+    write_csv(
+      file = here(
+        "data", 
+        "python_1", 
+        str_glue("b_", i), # before behaviours_to_keep[[1]][[i]], 
+        str_glue("sheep_", sheep_identifier[[j]]), 
+        str_glue("segment_", k)
+      ),
+      x = chopped_datasets[[i]][[j]][[k]] 
+    )
+
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#  9.4.3 No outputs: walk() and friends
+# 
+# Most functions are called for the value that they return, so it makes sense to capture and store the value with a map() function. But some functions are called primarily for their side-effects (e.g. cat(), write.csv(), or ggsave()) and it doesn’t make sense to capture their results. Take this simple example that displays a welcome message using cat(). cat() returns NULL, so while map() works (in the sense that it generates the desired welcomes), it also returns list(NULL, NULL).
+
+
+# #' @title Store chopped datasets
+# #' @description Create dirs where to store chopped datasets and store them. 
+# #'   Inside `parent_folder_name`, folders named `sheep_NUMBER` will be created,
+# #'   where the segments of a given sheep will be stored. Amount of 
+# #'   `sheep_NUMBER` folders will be based on 
+# #'   unique(chopped_datasets[[behaviour]]$sheep_number).
+# #' @return 
+# #' @param `parent_folder_name`. Name of parent folder where to store each
+# #'   sheep's folder and segments. 
+# #' @param `parent_folder_suffix`. Suffix of `parent_folder_name`. A number 
+# #'   indicating a combination of behaviours that will be stored. 
+# #' @param 
+
+
+
+
+
+
+# store_chopped <- function(
+  
+# ) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+# }
+
+
+
+
+
+
+
+# chopped_datasets <- kept_behaviours %>% 
+#   map(
+#     .x, 
+#     .f = ~ { 
+#        chop_data(
+#          .x,
+#          nrow_per_segment = nrow_per_segment,
+#          keep_remaining = FALSE
+#        )
+#      }
+#   )
+
+
+
+
+
+
+
+
+
+```
+
+DESCRIPTION OF BEHAVIOURS.
+
+
+
+
+
+
+
+
+
+Have in mind that inside each behaviour folder, we don't have the same sheeps,\
+e.g. sheep 5 appears on the eating and vigilance folders but not on the resting\
+folder.\ 
+This is important for constructing the training, validation and test sets.\ 
+Maybe for the training we don't have to take this into account, but for the\
+validation and test sets we surely have to.\
+That is, the validation and test sets must contain sheeps that appear on every\
+behaviour.\
+
+```{r}
+print("all sheep numbers")
+clean_data$sheep_number  %>% unique
+
+
+sheeps_in_eating = kept_behaviours[[1]][[1]]$sheep_number %>% unique
+sheeps_in_resting = kept_behaviours[[1]][[2]]$sheep_number %>% unique
+sheeps_in_vigilance = kept_behaviours[[1]][[3]]$sheep_number %>% unique
+
+
+# intersect() will give us values thata appear on both x and y, in this case
+# the sheepts that appear in eating and in resting. 
+appear_eating_resting <- intersect(sheeps_in_eating, sheeps_in_resting)
+
+
+# Now we will get the sheeps that appear on all three behaviours.
+print("sheeps that appear in all three behaviours:")
+appear_all <- intersect(appear_eating_resting, sheeps_in_vigilance) %>% print
+
+
+print("percentages of the data of the sheeps that appear in all three behaviours:")
+percentages_appear_all <- appear_all  %>% 
+  map(~ {
+    filter(clean_data, sheep_number == .x) %>% 
+      nrow() / 
+      nrow(clean_data)
+    }
+  ) %>% print
+
+
+print("total percentage of the data of the sheeps that appear in all three behaviours:")
+appear_all_total_percentage  <- percentages_appear_all %>% unlist %>% sum %>% 
+  print
+
+
+```
+
+So for the validation and test sets we should use the sheeps that appear on\ 
+`appear_all`, which amounts to `r appear_all_total_percentage` percent of the\
+total data.
+
+
+
+
+
+For starting, we will just have a training and a validation set because we\ 
+don't have much data yet.\ 
+We will make a 80/20 training/validation split (roughly since we are leaving 
+for validation all the data corresponding to some sheeps) 
+
+```{r}
+sheeps_for_validation <- c(51, 1) 
+
+sheeps_for_validation_percentage <- clean_data %>% filter(
+    sheep_number == sheeps_for_validation[1] | 
+    sheep_number == sheeps_for_validation[2]
+  ) %>% nrow / 
+  nrow(clean_data)
+
+
+
+
+
+```
+
+Sheeps for validation will be `r sheeps_for_validation` and the percentage of\
+the validation set corresponding to the `clean_data` is 
+`r sheeps_for_validation_percentage`. 
+
+
+
+
+Now we will move, from the `python_1` directory, the data corresponding to the\ 
+sheeps for validation to another directory called `python_1_validation`, and\ 
+lastly rename the `python_1` directory to `python_1_training`.  
+
+```{r} 
+
+# # Paths from `python_1` that will go to `python_1_validation`
+# validation_paths_old <- c("sheep_1", "sheep_51") %>%  
+#   map(~ path("data", "python_1", c("b_1", "b_2", "b_3"), .x)) %>% 
+#   unlist
+  
+# # Paths of `python_1_validation`
+# validation_paths_new <- c("sheep_1", "sheep_51") %>%  
+#   map(~ path("data", "python_1_validation", c("b_1", "b_2", "b_3"), .x)) %>% 
+#   unlist
+
+
+# # Move the data from `python_1` to `python_1_validation`
+# ## Copy
+# dir_copy(
+#   path = validation_paths_old,
+#   new_path = validation_paths_new,
+#   overwrite = FALSE
+# )
+# ## Clean
+# dir_delete(validation_paths_old)
+
+
+# # Rename the `python_1` directory to `python_1_training`
+# ## Copy 
+# dir_copy(
+#   path = "./data/python_1",
+#   new_path = "./data/python_1_training",
+#   overwrite = FALSE
+# )
+
+# ## Clean
+# dir_delete("./data/python_1")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# raw_data_sep
+
+
+# clean_data_sep <- raw_data_sep %>% 
+#   # Remove rows containing NAs
+#   drop_na %>% 
+#   # Change order of columns
+#   # select(
+#   #   'sheep_name', 
+#   #   'sheep_number', 
+#   #   'year', 
+#   #   'month', 
+#   #   'day', 
+#   #   'hours', 
+#   #   'minutes', 
+#   #   'seconds',
+#   #   'event.no.',
+#   #   'acc_x', 
+#   #   'acc_y',
+#   #   'acc_z', 
+#   #   'behaviours',
+#   #   'video_name', 
+#   #   'video_number',
+#   #   'file_name_original'
+#   # ) %>% 
+#   # Sort data
+#   arrange(
+#     sheep_number, 
+#     year, 
+#     month, 
+#     day, 
+#     hours, 
+#     minutes, 
+#     seconds,
+#     event.no.
+#   ) %>% 
+#   # Rename behaviours with tidyverse style + correct duplicated ones  
+#   mutate(
+#     behaviours = recode(
+#       behaviours, 
+#       'Search' = 'search', 
+#       'Eating' = 'eating', 
+#       'Vigilance' = 'vigilance', 
+#       'Fast.walk' = 'fast_walk', 
+#       'Walk' = 'walk', 
+#       'Fast.Walk' = 'fast_walk', 
+#       'Scratch' = 'scratch', 
+#       'Eating.up' = 'eating',
+#       'Vigilance.down' = 'vigilance', 
+#       'Resting' = 'resting', 
+#       'Shake' = 'shake', 
+#       'Scracth' = 'scratch'
+#     )
+#   ) %>% 
+#   mutate(
+#     #hours_minutes_seconds = make_datetime(hours, minutes, seconds)
+#     date_time = make_datetime(year, month, day, hours, minutes, seconds),
+#     hms = as_hms(date_time)
+#   )
+  
+
+# clean_data_sep_tb <- clean_data_sep %>% 
+#   filter(
+#     behaviours == 'eating' | 
+#     behaviours == 'vigilance' | 
+#     behaviours == 'resting' |
+#     behaviours == 'walk' | 
+#     behaviours == 'fast_walk' 
+#   )
+
+# plot_vars <- c(
+#   "pitch.angle",
+#   "pitch.smoothed.angle",
+#   "roll.angle", 
+#   "roll.smoothed.angle", 
+#   "vedba", 
+#   "vedba.smoothed", 
+#   "odba", 
+#   "odba.sm"
+# )
+
+# test_plots <- list()
+# for(i in seq_along(plot_vars)){
+#   test_plots[[i]] <- ggplot(clean_data_sep_tb) + 
+#     geom_line(aes(x = hms, y = pull(clean_data_sep_tb, plot_vars[i]), color = behaviours))
+# }
+
+
+
+
+
+# plots_ts <- map(
+#   .x = plot_vars, 
+#    ~ {ggplot(clean_data_sep_tb) + 
+#      geom_line( 
+#        aes( 
+#          x = hms,
+#          y = pull(clean_data_sep_tb, .x), 
+#          color = behaviours
+#        )
+#      ) +
+#      labs(
+#        y = .x
+#      )
+#    }
+# )
+# plots_ts
+
+# plots_dens <- map(
+#   plot_vars, 
+#   ~ qplot(pull(clean_data_sep_tb, .x)) +
+#     labs(
+#       x = .x
+#     )  
+# )
+
+# plots_dens
+
+# # vars_to_keep_sep <- c(
+# #   'file_name_original',
+# #   'Acc_x',
+# #   'Acc_y',
+# #   'Acc_z', 
+# #   # 'Mag_x',
+# #   # 'Mag_y',
+# #   # 'Mag_z',
+# #   'DateTime', 
+# #   'Hours',
+# #   'Minutes',
+# #   'Seconds',
+# #   'Event.no.',
+# #   'Behaviours',
+#   'pitch.angle',
+#   'pitch.smoothed.angle',
+#   'roll.angle', 
+#   'roll.smoothed.angle', 
+#   'vedba', 
+#   'vedba.smoothed', 
+#   'odba', 
+#   'odba.sm'
+# )
+
+# vars_plot <- c()
+```

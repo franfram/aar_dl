@@ -47,8 +47,8 @@ tar_plan(
     # Chop data into segments
     chopped_data = chop_data(
         wrangled_full_data,
-        behaviours, 
-        segment_length
+        behaviours = "A", 
+        seconds_per_segment = 5
     )
  
 )
