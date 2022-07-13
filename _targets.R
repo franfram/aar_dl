@@ -8,6 +8,12 @@ lapply(list.files("./R", full.names = TRUE), source)
 options(fnmate_searcher = "git_grep")
 options(fnmate_quote_jump_regex = TRUE) 
 
+## Future setup
+library(future)
+library(future.callr)
+plan(callr)
+
+
 ## tar_plan supports drake-style targets and also tar_target()
 tar_plan(
 
@@ -44,11 +50,25 @@ tar_plan(
         wrangled_full_data
     ),
 
-    # Chop data into segments
-    chopped_data = chop_data(
-        wrangled_full_data,
-        behaviours = "A", 
-        seconds_per_segment = 5
+    # Chop data into segments (using a maping target)
+    ## Define mappings
+    tar_target(
+        behav, c("A", "B", "C", "D", "E", "F")
+    ), 
+    tar_target(
+        seconds, c(5:1)
+    ), 
+
+    ## Chop
+    tar_target(
+        chopped_data, 
+        chop_data(
+            wrangled_full_data = wrangled_full_data,
+            behaviours_key = behav,  
+            seconds_per_segment = seconds
+        ), 
+         pattern = cross(behav, seconds), 
+         iteration = "list"
     )
  
 )
