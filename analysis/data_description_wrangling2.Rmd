@@ -77,7 +77,7 @@ knitr::opts_chunk$set(
 Library setup
 
 ```{r setup}
-#library(workflowr) 
+library(workflowr) 
 library(tidyverse)
 library(fs)
 library(here)
@@ -117,7 +117,7 @@ Files are named indicating number of video (e.g., 'video10' for the 10th video) 
 ## get paths of files
 sep_paths <- dir_ls(path = here("data", "sep"), glob = "*.csv") %>% 
   print()
-dic_paths <- dir_ls(path = here("data", "dec"), glob = "*.csv") %>% 
+dic_paths <- dir_ls(path = here("data", "dic"), glob = "*.csv") %>% 
   print()
 
 ```
@@ -887,6 +887,10 @@ will be useful for storing the segments and we will also remove a few variables\
 that we won't need for building the images.
 
 ```{r}
+library(targets)
+clean_data <- tar_read(wrangled_full_data)
+
+
 # add variable that assigns a number to each behaviour
 clean_data  <- clean_data %>% 
   mutate(
@@ -916,6 +920,11 @@ clean_data  <- clean_data %>%
     'acc_x', 
     'acc_y',
     'acc_z', 
+    'mag_x', 
+    'mag_y',
+    'mag_z', 
+    'pitch.angle', 
+    'roll.angle', 
     'behaviours',
     'behaviours_n'
   ) 
@@ -1070,7 +1079,7 @@ nrow_per_segment <- DD_Hz * seconds_per_segment
 # Chop (dropping remaining rows) data into segments. 
 ## Inside each behaviours data set (kept_behaviours[[i]]) we will first group
 ## by `sheep_number` and then chop the data into segments.
-chopped_datasets <- kept_behaviours[[1]] %>%
+chopped_datasets_A <- kept_behaviours[[1]] %>%
   map(
     .x, 
     .f = ~{ .x %>% 
@@ -1091,8 +1100,44 @@ chopped_datasets <- kept_behaviours[[1]] %>%
 
 
 
+chopped_datasets_B <- kept_behaviours[[2]] %>%
+  map(
+    .x, 
+    .f = ~{ .x %>% 
+      group_by(sheep_number) %>% 
+      group_map(
+        .x, 
+        .f = ~ { 
+          chop_data(
+            .x,
+            nrow_per_segment = nrow_per_segment,
+            keep_remaining = FALSE
+          )
+        }, 
+        .keep = TRUE
+      )
+    }
+  )
 
 
+chopped_datasets_C <- kept_behaviours[[3]] %>%
+  map(
+    .x, 
+    .f = ~{ .x %>% 
+      group_by(sheep_number) %>% 
+      group_map(
+        .x, 
+        .f = ~ { 
+          chop_data(
+            .x,
+            nrow_per_segment = nrow_per_segment,
+            keep_remaining = FALSE
+          )
+        }, 
+        .keep = TRUE
+      )
+    }
+  )
 
 
 
@@ -1143,55 +1188,82 @@ maybe the rest will be in decreasing order of percentage of data.
 # will be folders named after the sheep number. Inside of each of these sheep 
 # number folders, we will store the chopped data.
 
+letter <- c('A', 'B', 'C', 'D')
 
-for (i in seq_along(behaviours_to_keep[[1]])) {
+for (let in seq_along(letter)) {
 
-  sheep_identifier <- kept_behaviours[[1]][[i]]$sheep_number %>% unique
-  
-  for (j in seq_along(sheep_identifier)) { 
+  for (i in seq_along(behaviours_to_keep[[let]])) {
 
-    # Create behaviour sub-folders and sheep_number 
-    # sub-sub-folders and store file_path for writing csvs
-    dir_create(
-      here(
-        "data", 
-        "python_1", 
-        str_glue("b_", i),# before behaviours_to_keep[[1]][[i]], 
-        str_glue("sheep_", sheep_identifier[[j]])
-      )
-    )
-
-  }    
-}
-
-
-
-# store chopped data
-for (i in seq_along(behaviours_to_keep[[1]])) {
-
-  sheep_identifier <- kept_behaviours[[1]][[i]]$sheep_number %>% unique
-  
-  for (j in seq_along(sheep_identifier)) { 
-
-    for (k in seq_along(chopped_datasets[[i]][[j]])) {
+    sheep_identifier <- kept_behaviours[[let]][[i]]$sheep_number %>% unique
     
-    # write `chopped_data` segments to csv files
-    write_csv(
-      file = here(
-        "data", 
-        "python_1", 
-        str_glue("b_", i), # before behaviours_to_keep[[1]][[i]], 
-        str_glue("sheep_", sheep_identifier[[j]]), 
-        str_glue("segment_", k)
-      ),
-      x = chopped_datasets[[i]][[j]][[k]] 
-    )
+    for (j in seq_along(sheep_identifier)) { 
 
-    }
+      # Create behaviour sub-folders and sheep_number 
+      # sub-sub-folders and store file_path for writing csvs
+      dir_create(
+        here(
+          "data", 
+          str_glue("python_", letter[let]), 
+          str_glue("b_", behaviours_to_keep[[let]][[i]]),# before behaviours_to_keep[[1]][[i]], 
+          str_glue("sheep_", sheep_identifier[[j]])
+        )
+      )
+
+    }    
   }
 }
 
 
+
+
+for (let in seq_along(letter)) {
+
+  chopped_datasets <- kept_behaviours[[let]] %>%
+    map(
+      .x, 
+      .f = ~{ .x %>% 
+        group_by(sheep_number) %>% 
+        group_map(
+          .x, 
+          .f = ~ { 
+            chop_data(
+              .x,
+              nrow_per_segment = nrow_per_segment,
+              keep_remaining = FALSE
+            )
+          }, 
+          .keep = TRUE
+        )
+      }
+    )
+
+
+  # store chopped data
+  for (i in seq_along(behaviours_to_keep[[let]])) {
+
+    sheep_identifier <- kept_behaviours[[let]][[i]]$sheep_number %>% unique
+    
+    for (j in seq_along(sheep_identifier)) { 
+
+      for (k in seq_along(chopped_datasets[[i]][[j]])) {
+      
+      # write `chopped_data` segments to csv files
+      write_csv(
+        file = here(
+          "data", 
+          str_glue("python_", letter[let]), 
+          str_glue("b_", behaviours_to_keep[[let]][[i]]),# before behaviours_to_keep[[1]][[i]], 
+          str_glue("sheep_", sheep_identifier[[j]]),
+          str_glue('segment_', k)
+        ),
+        x = chopped_datasets[[i]][[j]][[k]] 
+      )
+
+      }
+    }
+  }
+
+}
 
 
 

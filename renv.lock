@@ -37,9 +37,7 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "130c0caba175739d98f2963c6a407cf6",
-      "Requirements": [
-        "lattice"
-      ]
+      "Requirements": []
     },
     "R6": {
       "Package": "R6",
@@ -95,9 +93,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.1",
       "Hash": "e8a22846fff485f0be3770c2da758713",
-      "Requirements": [
-        "sys"
-      ]
+      "Requirements": []
     },
     "assertthat": {
       "Package": "assertthat",
@@ -153,9 +149,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.4",
       "Hash": "0c54cf3a08cc0e550fbd64ad33166143",
-      "Requirements": [
-        "backports"
-      ]
+      "Requirements": []
     },
     "biglm": {
       "Package": "biglm",
@@ -169,9 +163,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.9-2.1",
       "Hash": "fb9718b294f541ed3adae42b8c830ae7",
-      "Requirements": [
-        "DBI"
-      ]
+      "Requirements": []
     },
     "bit": {
       "Package": "bit",
@@ -199,9 +191,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "4.0.5",
       "Hash": "9fe98599ca456d6552421db0d6772d8f",
-      "Requirements": [
-        "bit"
-      ]
+      "Requirements": []
     },
     "blob": {
       "Package": "blob",
@@ -215,10 +205,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.2",
       "Hash": "dc5f7a6598bb025d20d66bb758f12879",
-      "Requirements": [
-        "rlang",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "broom": {
       "Package": "broom",
@@ -232,19 +219,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.7.12",
       "Hash": "bfa8a039d77ae8d5413254e572c8abea",
-      "Requirements": [
-        "backports",
-        "dplyr",
-        "ellipsis",
-        "generics",
-        "ggplot2",
-        "glue",
-        "purrr",
-        "rlang",
-        "stringr",
-        "tibble",
-        "tidyr"
-      ]
+      "Requirements": []
     },
     "bslib": {
       "Package": "bslib",
@@ -258,13 +233,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.3.1",
       "Hash": "56ae7e1987b340186a8a5a157c2ec358",
-      "Requirements": [
-        "htmltools",
-        "jquerylib",
-        "jsonlite",
-        "rlang",
-        "sass"
-      ]
+      "Requirements": []
     },
     "cachem": {
       "Package": "cachem",
@@ -278,10 +247,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.0.6",
       "Hash": "648c5b3d71e6a37e3043617489a0a0e9",
-      "Requirements": [
-        "fastmap",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "callr": {
       "Package": "callr",
@@ -295,10 +261,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "3.7.0",
       "Hash": "461aa75a11ce2400245190ef5d3995df",
-      "Requirements": [
-        "R6",
-        "processx"
-      ]
+      "Requirements": []
     },
     "cellranger": {
       "Package": "cellranger",
@@ -312,10 +275,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.1.0",
       "Hash": "f61dbaec772ccd2e17705c1e872e9e7c",
-      "Requirements": [
-        "rematch",
-        "tibble"
-      ]
+      "Requirements": []
     },
     "cli": {
       "Package": "cli",
@@ -329,9 +289,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "3.2.0",
       "Hash": "1bdb126893e9ce6aae50ad1d6fc32faf",
-      "Requirements": [
-        "glue"
-      ]
+      "Requirements": []
     },
     "clipr": {
       "Package": "clipr",
@@ -381,10 +339,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.1.0",
       "Hash": "c6bb5e1ef58f2f1c84f238f55bd2e56a",
-      "Requirements": [
-        "memoise",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "cpp11": {
       "Package": "cpp11",
@@ -426,12 +381,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.0",
       "Hash": "6aa54f69598c32177e920eb3402e8293",
-      "Requirements": [
-        "R6",
-        "htmltools",
-        "jsonlite",
-        "lazyeval"
-      ]
+      "Requirements": []
     },
     "curl": {
       "Package": "curl",
@@ -473,23 +423,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.1.1",
       "Hash": "1f37fa4ab2f5f7eded42f78b9a887182",
-      "Requirements": [
-        "DBI",
-        "R6",
-        "assertthat",
-        "blob",
-        "dplyr",
-        "ellipsis",
-        "glue",
-        "lifecycle",
-        "magrittr",
-        "purrr",
-        "rlang",
-        "tibble",
-        "tidyselect",
-        "vctrs",
-        "withr"
-      ]
+      "Requirements": []
     },
     "digest": {
       "Package": "digest",
@@ -531,18 +465,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.0.8",
       "Hash": "ef47665e64228a17609d6df877bf86f2",
-      "Requirements": [
-        "R6",
-        "generics",
-        "glue",
-        "lifecycle",
-        "magrittr",
-        "pillar",
-        "rlang",
-        "tibble",
-        "tidyselect",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "dtplyr": {
       "Package": "dtplyr",
@@ -556,18 +479,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.1",
       "Hash": "f5d195cd5fcc0a77499d9da698ef2ea3",
-      "Requirements": [
-        "crayon",
-        "data.table",
-        "dplyr",
-        "ellipsis",
-        "glue",
-        "lifecycle",
-        "rlang",
-        "tibble",
-        "tidyselect",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -581,9 +493,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.3.2",
       "Hash": "bb0eec2fe32e88d9e2836c2f73ea2077",
-      "Requirements": [
-        "rlang"
-      ]
+      "Requirements": []
     },
     "evaluate": {
       "Package": "evaluate",
@@ -653,12 +563,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.5.1",
       "Hash": "81c3244cab67468aac4c60550832655d",
-      "Requirements": [
-        "ellipsis",
-        "magrittr",
-        "rlang",
-        "tibble"
-      ]
+      "Requirements": []
     },
     "fs": {
       "Package": "fs",
@@ -674,6 +579,22 @@
       "Hash": "7c89603d81793f0d5486d91ab1fc6f1d",
       "Requirements": []
     },
+    "future": {
+      "Package": "future",
+      "Version": "1.26.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "cd20396d5395828de2e12d60467f6a53",
+      "Requirements": []
+    },
+    "future.callr": {
+      "Package": "future.callr",
+      "Version": "0.8.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "d56e31f531c20af2415a3971ca0b3c3c",
+      "Requirements": []
+    },
     "gargle": {
       "Package": "gargle",
       "Version": "1.2.0",
@@ -686,17 +607,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.0",
       "Hash": "9d234e6a87a6f8181792de6dc4a00e39",
-      "Requirements": [
-        "cli",
-        "fs",
-        "glue",
-        "httr",
-        "jsonlite",
-        "rappdirs",
-        "rlang",
-        "rstudioapi",
-        "withr"
-      ]
+      "Requirements": []
     },
     "generics": {
       "Package": "generics",
@@ -724,9 +635,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.2-2",
       "Hash": "07a91f99e56951818ab911366db77700",
-      "Requirements": [
-        "rstudioapi"
-      ]
+      "Requirements": []
     },
     "ggplot2": {
       "Package": "ggplot2",
@@ -740,18 +649,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "3.3.5",
       "Hash": "d7566c471c7b17e095dd023b9ef155ad",
-      "Requirements": [
-        "MASS",
-        "digest",
-        "glue",
-        "gtable",
-        "isoband",
-        "mgcv",
-        "rlang",
-        "scales",
-        "tibble",
-        "withr"
-      ]
+      "Requirements": []
     },
     "git2r": {
       "Package": "git2r",
@@ -765,6 +663,14 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.29.0",
       "Hash": "b114135c4749076bd5ef74a5827b6f62",
+      "Requirements": []
+    },
+    "globals": {
+      "Package": "globals",
+      "Version": "0.15.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "9449b1dfaf8609db72556cfbe228285d",
       "Requirements": []
     },
     "glue": {
@@ -793,22 +699,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.0.0",
       "Hash": "c3a25adbbfbb03f12e6f88c5fb1f3024",
-      "Requirements": [
-        "cli",
-        "gargle",
-        "glue",
-        "httr",
-        "jsonlite",
-        "lifecycle",
-        "magrittr",
-        "pillar",
-        "purrr",
-        "rlang",
-        "tibble",
-        "uuid",
-        "vctrs",
-        "withr"
-      ]
+      "Requirements": []
     },
     "googlesheets4": {
       "Package": "googlesheets4",
@@ -822,22 +713,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.0.0",
       "Hash": "9a6564184dc4a81daea4f1d7ce357c6a",
-      "Requirements": [
-        "cellranger",
-        "cli",
-        "curl",
-        "gargle",
-        "glue",
-        "googledrive",
-        "httr",
-        "ids",
-        "magrittr",
-        "purrr",
-        "rematch2",
-        "rlang",
-        "tibble",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "gtable": {
       "Package": "gtable",
@@ -865,16 +741,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.4.3",
       "Hash": "10bec8a8264f3eb59531e8c4c0303f96",
-      "Requirements": [
-        "cpp11",
-        "forcats",
-        "hms",
-        "readr",
-        "rlang",
-        "tibble",
-        "tidyselect",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "here": {
       "Package": "here",
@@ -888,9 +755,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.0.1",
       "Hash": "24b224366f9c2e7534d2344d10d59211",
-      "Requirements": [
-        "rprojroot"
-      ]
+      "Requirements": []
     },
     "highr": {
       "Package": "highr",
@@ -904,9 +769,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.9",
       "Hash": "8eb36c8125038e648e5d111c0d7b2ed4",
-      "Requirements": [
-        "xfun"
-      ]
+      "Requirements": []
     },
     "hms": {
       "Package": "hms",
@@ -920,13 +783,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.1.1",
       "Hash": "5b8a2dd0fdbe2ab4f6081e6c7be6dfca",
-      "Requirements": [
-        "ellipsis",
-        "lifecycle",
-        "pkgconfig",
-        "rlang",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "htmltools": {
       "Package": "htmltools",
@@ -940,12 +797,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.5.2",
       "Hash": "526c484233f42522278ab06fb185cb26",
-      "Requirements": [
-        "base64enc",
-        "digest",
-        "fastmap",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "htmlwidgets": {
       "Package": "htmlwidgets",
@@ -959,11 +811,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.5.4",
       "Hash": "76147821cd3fcd8c4b04e1ef0498e7fb",
-      "Requirements": [
-        "htmltools",
-        "jsonlite",
-        "yaml"
-      ]
+      "Requirements": []
     },
     "httpuv": {
       "Package": "httpuv",
@@ -977,12 +825,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.6.5",
       "Hash": "97fe71f0a4a1c9890e6c2128afa04bc0",
-      "Requirements": [
-        "R6",
-        "Rcpp",
-        "later",
-        "promises"
-      ]
+      "Requirements": []
     },
     "httr": {
       "Package": "httr",
@@ -996,13 +839,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.4.2",
       "Hash": "a525aba14184fec243f9eaec62fbed43",
-      "Requirements": [
-        "R6",
-        "curl",
-        "jsonlite",
-        "mime",
-        "openssl"
-      ]
+      "Requirements": []
     },
     "ids": {
       "Package": "ids",
@@ -1016,10 +853,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.0.1",
       "Hash": "99df65cfef20e525ed38c3d2577f7190",
-      "Requirements": [
-        "openssl",
-        "uuid"
-      ]
+      "Requirements": []
     },
     "igraph": {
       "Package": "igraph",
@@ -1033,11 +867,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.11",
       "Hash": "1d10cd31c2979f9c819ffe4d16b9dc2b",
-      "Requirements": [
-        "Matrix",
-        "magrittr",
-        "pkgconfig"
-      ]
+      "Requirements": []
     },
     "isoband": {
       "Package": "isoband",
@@ -1065,9 +895,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.1.4",
       "Hash": "5aab57a3bd297eee1c1d862735972182",
-      "Requirements": [
-        "htmltools"
-      ]
+      "Requirements": []
     },
     "jsonlite": {
       "Package": "jsonlite",
@@ -1109,13 +937,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.37",
       "Hash": "a4ec675eb332a33fe7b7fe26f70e1f98",
-      "Requirements": [
-        "evaluate",
-        "highr",
-        "stringr",
-        "xfun",
-        "yaml"
-      ]
+      "Requirements": []
     },
     "labeling": {
       "Package": "labeling",
@@ -1143,10 +965,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.3.0",
       "Hash": "7e7b457d7766bc47f2a5f21cc2984f8e",
-      "Requirements": [
-        "Rcpp",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "lattice": {
       "Package": "lattice",
@@ -1176,10 +995,15 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.0.1",
       "Hash": "a6b6d352e3ed897373ab19d8395c98d0",
-      "Requirements": [
-        "glue",
-        "rlang"
-      ]
+      "Requirements": []
+    },
+    "listenv": {
+      "Package": "listenv",
+      "Version": "0.8.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "0bde42ee282efb18c7c4e63822f5b4f7",
+      "Requirements": []
     },
     "lobstr": {
       "Package": "lobstr",
@@ -1193,11 +1017,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.1.1",
       "Hash": "3354c874f6008f7f1e418526df8ecd8a",
-      "Requirements": [
-        "Rcpp",
-        "crayon",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "lubridate": {
       "Package": "lubridate",
@@ -1211,10 +1031,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.8.0",
       "Hash": "2ff5eedb6ee38fb1b81205c73be1be5a",
-      "Requirements": [
-        "cpp11",
-        "generics"
-      ]
+      "Requirements": []
     },
     "magrittr": {
       "Package": "magrittr",
@@ -1242,21 +1059,15 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.0.1",
       "Hash": "e2817ccf4a065c5d9d7f2cfbe7c1d78c",
-      "Requirements": [
-        "cachem",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "mgcv": {
       "Package": "mgcv",
-      "Version": "1.8-38",
+      "Version": "1.8-39",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "be3c61ffbb1e3d3b3df214d192ac5444",
-      "Requirements": [
-        "Matrix",
-        "nlme"
-      ]
+      "Hash": "055265005c238024e306fe0b600c89ff",
+      "Requirements": []
     },
     "mime": {
       "Package": "mime",
@@ -1284,16 +1095,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.1.8",
       "Hash": "9fd59716311ee82cba83dc2826fc5577",
-      "Requirements": [
-        "broom",
-        "magrittr",
-        "purrr",
-        "rlang",
-        "tibble",
-        "tidyr",
-        "tidyselect",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "munsell": {
       "Package": "munsell",
@@ -1307,9 +1109,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.5.0",
       "Hash": "6dfe8bf774944bd5595785e3229d8771",
-      "Requirements": [
-        "colorspace"
-      ]
+      "Requirements": []
     },
     "nlme": {
       "Package": "nlme",
@@ -1317,9 +1117,7 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "74ad940dccc9e977189a5afe5fcdb7ba",
-      "Requirements": [
-        "lattice"
-      ]
+      "Requirements": []
     },
     "openssl": {
       "Package": "openssl",
@@ -1333,9 +1131,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.0.0",
       "Hash": "cf4329aac12c2c44089974559c18e446",
-      "Requirements": [
-        "askpass"
-      ]
+      "Requirements": []
     },
     "paint": {
       "Package": "paint",
@@ -1349,15 +1145,15 @@
       "RemoteRef": "HEAD",
       "RemoteSha": "0b27c4821bd2509c006e5c51689f8d615f5b952b",
       "Hash": "e3bdfb222fdd3a4afb89bf62c739f7eb",
-      "Requirements": [
-        "RColorBrewer",
-        "crayon",
-        "keypress",
-        "pryr",
-        "purrr",
-        "vctrs",
-        "viridisLite"
-      ]
+      "Requirements": []
+    },
+    "parallelly": {
+      "Package": "parallelly",
+      "Version": "1.32.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "022489ebce2ef2438db4583fae118240",
+      "Requirements": []
     },
     "pillar": {
       "Package": "pillar",
@@ -1371,17 +1167,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.7.0",
       "Hash": "51dfc97e1b7069e9f7e6f83f3589c22e",
-      "Requirements": [
-        "cli",
-        "crayon",
-        "ellipsis",
-        "fansi",
-        "glue",
-        "lifecycle",
-        "rlang",
-        "utf8",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "pkgconfig": {
       "Package": "pkgconfig",
@@ -1409,29 +1195,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "4.10.0",
       "Hash": "fbb11e44d057996ca5fe40d959cacfb0",
-      "Requirements": [
-        "RColorBrewer",
-        "base64enc",
-        "crosstalk",
-        "data.table",
-        "digest",
-        "dplyr",
-        "ggplot2",
-        "htmltools",
-        "htmlwidgets",
-        "httr",
-        "jsonlite",
-        "lazyeval",
-        "magrittr",
-        "promises",
-        "purrr",
-        "rlang",
-        "scales",
-        "tibble",
-        "tidyr",
-        "vctrs",
-        "viridisLite"
-      ]
+      "Requirements": []
     },
     "prettyunits": {
       "Package": "prettyunits",
@@ -1459,10 +1223,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "3.5.2",
       "Hash": "0cbca2bc4d16525d009c4dbba156b37c",
-      "Requirements": [
-        "R6",
-        "ps"
-      ]
+      "Requirements": []
     },
     "progress": {
       "Package": "progress",
@@ -1476,12 +1237,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.2",
       "Hash": "14dc9f7a3c91ebb14ec5bb9208a07061",
-      "Requirements": [
-        "R6",
-        "crayon",
-        "hms",
-        "prettyunits"
-      ]
+      "Requirements": []
     },
     "promises": {
       "Package": "promises",
@@ -1495,13 +1251,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.0.1",
       "Hash": "4ab2c43adb4d4699cf3690acd378d75d",
-      "Requirements": [
-        "R6",
-        "Rcpp",
-        "later",
-        "magrittr",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "pryr": {
       "Package": "pryr",
@@ -1515,12 +1265,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.1.5",
       "Hash": "3fb39bed6e21e21cdb79a3203c6a198e",
-      "Requirements": [
-        "Rcpp",
-        "codetools",
-        "lobstr",
-        "stringr"
-      ]
+      "Requirements": []
     },
     "ps": {
       "Package": "ps",
@@ -1548,10 +1293,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.3.4",
       "Hash": "97def703420c8ab10d8f0e6c72101e02",
-      "Requirements": [
-        "magrittr",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "rappdirs": {
       "Package": "rappdirs",
@@ -1579,9 +1321,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.4.4",
       "Hash": "75389c8091eb14ee21c6bc87a88b3809",
-      "Requirements": [
-        "htmltools"
-      ]
+      "Requirements": []
     },
     "reactable": {
       "Package": "reactable",
@@ -1595,13 +1335,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.2.3",
       "Hash": "ac1afe50d1c77470a72971a07fd146b1",
-      "Requirements": [
-        "digest",
-        "htmltools",
-        "htmlwidgets",
-        "jsonlite",
-        "reactR"
-      ]
+      "Requirements": []
     },
     "readr": {
       "Package": "readr",
@@ -1615,19 +1349,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.1.2",
       "Hash": "9c59de1357dc209868b5feb5c9f0fe2f",
-      "Requirements": [
-        "R6",
-        "cli",
-        "clipr",
-        "cpp11",
-        "crayon",
-        "hms",
-        "lifecycle",
-        "rlang",
-        "tibble",
-        "tzdb",
-        "vroom"
-      ]
+      "Requirements": []
     },
     "readxl": {
       "Package": "readxl",
@@ -1641,12 +1363,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.3.1",
       "Hash": "63537c483c2dbec8d9e3183b3735254a",
-      "Requirements": [
-        "Rcpp",
-        "cellranger",
-        "progress",
-        "tibble"
-      ]
+      "Requirements": []
     },
     "rematch": {
       "Package": "rematch",
@@ -1674,22 +1391,12 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.1.2",
       "Hash": "76c9e04c712a05848ae7a23d2f170a40",
-      "Requirements": [
-        "tibble"
-      ]
+      "Requirements": []
     },
     "renv": {
       "Package": "renv",
-      "Version": "0.15.2",
-      "Source": "CRAN",
-      "Repository": "CRAN",
-      "RemoteType": "standard",
-      "RemotePkgRef": "renv",
-      "RemoteRef": "renv",
-      "RemoteRepos": "https://cloud.r-project.org",
-      "RemotePkgPlatform": "source",
-      "RemoteSha": "0.15.2",
-      "Hash": "206c4ef8b7ad6fb1060d69aa7b9dfe69",
+      "Version": "0.15.5",
+      "Source": "Repository",
       "Requirements": []
     },
     "reprex": {
@@ -1704,18 +1411,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.0.1",
       "Hash": "911d101becedc0fde495bd910984bdc8",
-      "Requirements": [
-        "callr",
-        "cli",
-        "clipr",
-        "fs",
-        "glue",
-        "knitr",
-        "rlang",
-        "rmarkdown",
-        "rstudioapi",
-        "withr"
-      ]
+      "Requirements": []
     },
     "rlang": {
       "Package": "rlang",
@@ -1743,18 +1439,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "2.13",
       "Hash": "ac78f4d2e0289d4cba73b88af567b8b1",
-      "Requirements": [
-        "bslib",
-        "evaluate",
-        "htmltools",
-        "jquerylib",
-        "jsonlite",
-        "knitr",
-        "stringr",
-        "tinytex",
-        "xfun",
-        "yaml"
-      ]
+      "Requirements": []
     },
     "rprojroot": {
       "Package": "rprojroot",
@@ -1796,15 +1481,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.0.2",
       "Hash": "bb099886deffecd6f9b298b7d4492943",
-      "Requirements": [
-        "httr",
-        "lifecycle",
-        "magrittr",
-        "rlang",
-        "selectr",
-        "tibble",
-        "xml2"
-      ]
+      "Requirements": []
     },
     "sass": {
       "Package": "sass",
@@ -1818,13 +1495,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.4.0",
       "Hash": "50cf822feb64bb3977bda0b7091be623",
-      "Requirements": [
-        "R6",
-        "fs",
-        "htmltools",
-        "rappdirs",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "scales": {
       "Package": "scales",
@@ -1838,15 +1509,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.1.1",
       "Hash": "6f76f71042411426ec8df6c54f34e6dd",
-      "Requirements": [
-        "R6",
-        "RColorBrewer",
-        "farver",
-        "labeling",
-        "lifecycle",
-        "munsell",
-        "viridisLite"
-      ]
+      "Requirements": []
     },
     "selectr": {
       "Package": "selectr",
@@ -1860,10 +1523,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.4-2",
       "Hash": "3838071b66e0c566d55cc26bd6e27bf4",
-      "Requirements": [
-        "R6",
-        "stringr"
-      ]
+      "Requirements": []
     },
     "stringi": {
       "Package": "stringi",
@@ -1891,11 +1551,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.4.0",
       "Hash": "0759e6b6c0957edb1311028a49a35e76",
-      "Requirements": [
-        "glue",
-        "magrittr",
-        "stringi"
-      ]
+      "Requirements": []
     },
     "sys": {
       "Package": "sys",
@@ -1923,17 +1579,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.5.0",
       "Hash": "69e05d6f7e98f843b1a94266cfd2d2ed",
-      "Requirements": [
-        "digest",
-        "dplyr",
-        "fs",
-        "rlang",
-        "targets",
-        "tibble",
-        "tidyselect",
-        "vctrs",
-        "withr"
-      ]
+      "Requirements": []
     },
     "targets": {
       "Package": "targets",
@@ -1947,23 +1593,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.10.0",
       "Hash": "bd9b5c201537ae9e9bf3e8addbeb4218",
-      "Requirements": [
-        "R6",
-        "base64url",
-        "callr",
-        "cli",
-        "codetools",
-        "data.table",
-        "digest",
-        "igraph",
-        "knitr",
-        "rlang",
-        "tibble",
-        "tidyselect",
-        "vctrs",
-        "withr",
-        "yaml"
-      ]
+      "Requirements": []
     },
     "tibble": {
       "Package": "tibble",
@@ -1977,16 +1607,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "3.1.6",
       "Hash": "8a8f02d1934dfd6431c671361510dd0b",
-      "Requirements": [
-        "ellipsis",
-        "fansi",
-        "lifecycle",
-        "magrittr",
-        "pillar",
-        "pkgconfig",
-        "rlang",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "tidyr": {
       "Package": "tidyr",
@@ -2000,19 +1621,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.2.0",
       "Hash": "d8b95b7fee945d7da6888cf7eb71a49c",
-      "Requirements": [
-        "cpp11",
-        "dplyr",
-        "ellipsis",
-        "glue",
-        "lifecycle",
-        "magrittr",
-        "purrr",
-        "rlang",
-        "tibble",
-        "tidyselect",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "tidyselect": {
       "Package": "tidyselect",
@@ -2026,13 +1635,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.1.2",
       "Hash": "17f6da8cfd7002760a859915ce7eef8f",
-      "Requirements": [
-        "ellipsis",
-        "glue",
-        "purrr",
-        "rlang",
-        "vctrs"
-      ]
+      "Requirements": []
     },
     "tidyverse": {
       "Package": "tidyverse",
@@ -2046,37 +1649,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.3.1",
       "Hash": "fc4c72b6ae9bb283416bd59a3303bbab",
-      "Requirements": [
-        "broom",
-        "cli",
-        "crayon",
-        "dbplyr",
-        "dplyr",
-        "dtplyr",
-        "forcats",
-        "ggplot2",
-        "googledrive",
-        "googlesheets4",
-        "haven",
-        "hms",
-        "httr",
-        "jsonlite",
-        "lubridate",
-        "magrittr",
-        "modelr",
-        "pillar",
-        "purrr",
-        "readr",
-        "readxl",
-        "reprex",
-        "rlang",
-        "rstudioapi",
-        "rvest",
-        "stringr",
-        "tibble",
-        "tidyr",
-        "xml2"
-      ]
+      "Requirements": []
     },
     "tinytex": {
       "Package": "tinytex",
@@ -2090,9 +1663,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.37",
       "Hash": "a80abeb527a977e4bef21873d29222dd",
-      "Requirements": [
-        "xfun"
-      ]
+      "Requirements": []
     },
     "tzdb": {
       "Package": "tzdb",
@@ -2106,9 +1677,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.2.0",
       "Hash": "5e069fb033daf2317bd628d3100b75c5",
-      "Requirements": [
-        "cpp11"
-      ]
+      "Requirements": []
     },
     "utf8": {
       "Package": "utf8",
@@ -2150,11 +1719,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "0.3.8",
       "Hash": "ecf749a1b39ea72bd9b51b76292261f1",
-      "Requirements": [
-        "ellipsis",
-        "glue",
-        "rlang"
-      ]
+      "Requirements": []
     },
     "viridisLite": {
       "Package": "viridisLite",
@@ -2182,22 +1747,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.5.7",
       "Hash": "976507b5a105bc3bdf6a5a5f29e0684f",
-      "Requirements": [
-        "bit64",
-        "cli",
-        "cpp11",
-        "crayon",
-        "glue",
-        "hms",
-        "lifecycle",
-        "progress",
-        "rlang",
-        "tibble",
-        "tidyselect",
-        "tzdb",
-        "vctrs",
-        "withr"
-      ]
+      "Requirements": []
     },
     "whisker": {
       "Package": "whisker",
@@ -2239,23 +1789,7 @@
       "RemotePkgPlatform": "source",
       "RemoteSha": "1.7.0",
       "Hash": "4055c2dd2c5bc0a3bb5a668c03a1cc98",
-      "Requirements": [
-        "callr",
-        "fs",
-        "getPass",
-        "git2r",
-        "glue",
-        "httpuv",
-        "httr",
-        "knitr",
-        "rmarkdown",
-        "rprojroot",
-        "rstudioapi",
-        "stringr",
-        "whisker",
-        "xfun",
-        "yaml"
-      ]
+      "Requirements": []
     },
     "xfun": {
       "Package": "xfun",

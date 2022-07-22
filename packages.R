@@ -10,6 +10,13 @@ library(reactable)
 library(paint)
 library(plotly)
 library(hms)
+library(fs)
 
 ## Conflicted setup
 conflict_prefer("filter", "dplyr")
+
+
+## Define environmental variables for faster interactive work
+tm <- tar_make
+tv <- tar_visnetwork
+tr <- tar_read

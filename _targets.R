@@ -4,9 +4,12 @@ source("./packages.R")
 ## Load your R files
 lapply(list.files("./R", full.names = TRUE), source)
 
-## fnmate setup
+# fnmate setup
 options(fnmate_searcher = "git_grep")
 options(fnmate_quote_jump_regex = TRUE) 
+
+# renv setup
+renv::activate()
 
 ## Future setup
 library(future)
@@ -59,17 +62,39 @@ tar_plan(
         seconds, c(5:1)
     ), 
 
-    ## Chop
+    # Chop
     tar_target(
         chopped_data, 
         chop_data(
             wrangled_full_data = wrangled_full_data,
             behaviours_key = behav,  
             seconds_per_segment = seconds
-        ), 
-         pattern = cross(behav, seconds), 
-         iteration = "list"
-    )
+        )#, 
+         #pattern = cross(behav, seconds), 
+         #iteration = "list"
+    ),
+
+    # tar_target(
+    #     test, 
+    #     test_directories(
+    #         behaviours_key = behav, 
+    #         #seconds_per_segment = seconds
+    #     ),
+    #     pattern = map(behav)
+    # )
+
+
+
+    # Create directories for segments and save data
+    # tar_target(
+    #     segment_dirs, 
+    #     create_segment_dirs(
+    #         chopped_data = chopped_data,
+    #         segment_dir_base = "segments"
+    #     ), 
+    #     pattern = behav, 
+    #     iteration = "list"
+    # ),
  
 )
 # 
