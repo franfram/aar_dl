@@ -1189,6 +1189,7 @@ maybe the rest will be in decreasing order of percentage of data.
 # number folders, we will store the chopped data.
 
 letter <- c('A', 'B', 'C', 'D')
+"should add another for loop for the seconds"
 
 for (let in seq_along(letter)) {
 
@@ -1216,7 +1217,8 @@ for (let in seq_along(letter)) {
 
 
 
-for (let in seq_along(letter)) {
+for (let in seq_along(c('A'))){#seq_along(letter)) {
+#for (let in seq_along(letter)) {
 
   chopped_datasets <- kept_behaviours[[let]] %>%
     map(
