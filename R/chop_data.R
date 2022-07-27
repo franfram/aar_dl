@@ -79,7 +79,7 @@ chop_data <- function(
   behaviours_key  <- c('A', 'B', 'C', 'D', 'E', 'F')
   seconds_per_segment <- c(5:1)
   
-  wrangled_full_data  <- tar_read(wrangled_full_data)
+  #wrangled_full_data  <- tar_read(wrangled_full_data)
   # behaviours_key = c('A', 'B', 'C', 'D', 'E', 'F'), 
   # seconds_per_segment = c(5:1)
  
@@ -93,8 +93,8 @@ chop_data <- function(
 
   # Start nested loop to iterate over behaviours and seconds_per_segment, chopping
   # data and storing it in each iteration 
-  for (behaviours in c("A")) {#behaviours_key) {
-    for (seconds in 5) {#seconds_per_segment){
+  for (behaviours in behaviours_key) {#c("A")) {#behaviours_key) {
+    for (seconds in seconds_per_segment){#5) {#seconds_per_segment){
 
       #Define behaviours to include in segments depending on the input of `behaviours` argument
       if (behaviours == "A") {
@@ -150,6 +150,28 @@ chop_data <- function(
         )
       }
 
+      #split `wrangled_full_data` into sub-datasets containing a given behaviour (here we include all the behaviours present in the full dataset)
+      behaviour_datasets <- wrangled_full_data %>%
+        group_by(behaviours) %>%
+        group_split()
+
+
+      # Now we keep only the behaviours in `behaviours_to_include`
+      kept_behaviours <- behaviour_datasets %>%
+        keep(
+          ~ unique(.x$behaviours) %in% behaviours_to_include
+        )
+
+
+      #return(kept_behaviours)
+
+      # Daily Diaries frequency
+      DD_Hz  <- 40
+
+
+      # N of rows per segment
+      nrow_per_segment <- DD_Hz * seconds# seconds_per_segment
+
 
       # Create directories. The parent folder is going to be 
       # named str_glue("python_", behaviours, "_", seconds, "s"). This folder will contain sub-folders 
@@ -185,28 +207,6 @@ chop_data <- function(
         }    
       }
 
-      # split `wrangled_full_data` into sub-datasets containing a given behaviour (here we include all the behaviours present in the full dataset)
-      behaviour_datasets <- wrangled_full_data %>% 
-        group_by(behaviours) %>% 
-        group_split()
-
-
-      # Now we keep only the behaviours in `behaviours_to_include`
-      kept_behaviours <- behaviour_datasets %>% 
-        keep(
-          ~ unique(.x$behaviours) %in% behaviours_to_include
-        )
-
-
-      #return(kept_behaviours)
-
-      # Daily Diaries frequency
-      DD_Hz  <- 40
-
-
-      # N of rows per segment
-      nrow_per_segment <- DD_Hz * seconds# seconds_per_segment
-
 
 
 
@@ -214,57 +214,27 @@ chop_data <- function(
  
 
 
-      # Chop data
-
-
 
       # Chop (dropping remaining rows) data into segments. 
       ## Inside each behaviours data set (kept_behaviours[[i]]) we will first group
       ## by `sheep_number` and then chop the data into segments.
-      "this doesn't work properly"
-      # chopped_datasets <- kept_behaviours %>%
-      #   map(
-      #     .x, 
-      #     .f = ~{ .x %>% 
-      #       group_by("sheep_number") %>% 
-      #       group_map(
-      #         .x, 
-      #         .f = ~ { 
-      #           chop(
-      #             .x,
-      #             nrow_per_segment = nrow_per_segment,
-      #             keep_remaining = FALSE
+      # chopped_datasets <- map(
+      #     .x = kept_behaviours, 
+      #     .f = ~{
+      #       .x %>% 
+      #         group_by(sheep_number) %>% 
+      #         group_map(
+      #           .f = ~{
+      #             chop(
+      #               .x,
+      #               nrow_per_segment = nrow_per_segment, 
+      #               keep_remaining = FALSE
+      #               )
+      #             }
       #           )
-      #         }, 
-      #         .keep = TRUE
-      #       )
-      #     }
-      #   )
-
-      
-      
-      
-      
-      
-      "this works properly" 
-      
-      chopped_datasets <- map(
-          .x = kept_behaviours, 
-          .f = ~{
-            .x %>% 
-              group_by(sheep_number) %>% 
-              group_map(
-                .f = ~{
-                  chop(
-                    .x,
-                    nrow_per_segment = nrow_per_segment, 
-                    keep_remaining = FALSE
-                    )
-                  }
-                )
-            }
-          )
-      
+      #       }
+      #     )
+      # 
       
       
       
@@ -278,42 +248,42 @@ chop_data <- function(
           thats why downstream there the index error with chopped_datasets[[i]][[j]]. J is only 1"
 
         # Store chopped data
-        for (i in seq_along(behaviours_to_include)) {
-
-          # Get sheep numbers of each behaviour sub-dataset
-          sheep_identifier <- kept_behaviours[[i]]$sheep_number %>% unique
-          
-          for (j in seq_along(sheep_identifier)) { 
-
-            for (k in seq_along(chopped_datasets[[i]][[j]])) {
-             
-              # Store path where chopped data will be saved 
-              path_files = here(
-                'data', 
-                str_glue('python_', behaviours, '_', seconds, 's'),
-                str_glue('b_', behaviours_to_include[[i]]), # before behaviours_to_keep[[1]][[i]], 
-                str_glue('sheep_', sheep_identifier[[j]]),
-                str_glue('segment_', k)
-              )
-              
-              # write `chopped_data` segments to csv files
-              write_csv(
-                x = chopped_datasets[[i]][[j]][[k]], 
-                file = path_files
-                )
-              
-              # Print where the data is being saved 
-              print(
-                str_glue(
-                  "Chopped data is stored at: \n", 
-                  path_files, 
-                  "\n"
-                )
-              )
-              
-            }
-          }
-        }
+        # for (i in seq_along(behaviours_to_include)) {
+        # 
+        #   # Get sheep numbers of each behaviour sub-dataset
+        #   sheep_identifier <- kept_behaviours[[i]]$sheep_number %>% unique
+        #   
+        #   for (j in seq_along(sheep_identifier)) { 
+        # 
+        #     for (k in seq_along(chopped_datasets[[i]][[j]])) {
+        #      
+        #       # Store path where chopped data will be saved 
+        #       path_files = here(
+        #         'data', 
+        #         str_glue('python_', behaviours, '_', seconds, 's'),
+        #         str_glue('b_', behaviours_to_include[[i]]), # before behaviours_to_keep[[1]][[i]], 
+        #         str_glue('sheep_', sheep_identifier[[j]]),
+        #         str_glue('segment_', k)
+        #       )
+        #       
+        #       # write `chopped_data` segments to csv files
+        #       write_csv(
+        #         x = chopped_datasets[[i]][[j]][[k]], 
+        #         file = path_files
+        #         )
+        #       
+        #       # Print where the data is being saved 
+        #       print(
+        #         str_glue(
+        #           "Stored chopped data at: \n", 
+        #           path_files, 
+        #           "\n"
+        #         )
+        #       )
+        #       
+        #     }
+        #   }
+        # }
 
 
 
