@@ -122,7 +122,7 @@ chop_data <- function(
   # Start nested loop to iterate over behaviours and seconds_per_segment, chopping
   # data and storing it in each iteration 
   for (behaviours in c("A")) {#behaviours_key) {
-    for (seconds in 1) {#seconds_per_segment){
+    for (seconds in 5) {#seconds_per_segment){
 
       #Define behaviours to include in segments depending on the input of `behaviours` argument
       if (behaviours == "A") {
@@ -215,25 +215,55 @@ chop_data <- function(
       # Chop (dropping remaining rows) data into segments. 
       ## Inside each behaviours data set (kept_behaviours[[i]]) we will first group
       ## by `sheep_number` and then chop the data into segments.
-      chopped_datasets <- kept_behaviours %>%
-        map(
-          .x, 
-          .f = ~{ .x %>% 
-            group_by("sheep_number") %>% 
-            group_map(
-              .x, 
-              .f = ~ { 
-                chop(
-                  .x,
-                  nrow_per_segment = nrow_per_segment,
-                  keep_remaining = FALSE
-                )
-              }, 
-              .keep = TRUE
-            )
-          }
-        )
+      "this doesn't work properly"
+      # chopped_datasets <- kept_behaviours %>%
+      #   map(
+      #     .x, 
+      #     .f = ~{ .x %>% 
+      #       group_by("sheep_number") %>% 
+      #       group_map(
+      #         .x, 
+      #         .f = ~ { 
+      #           chop(
+      #             .x,
+      #             nrow_per_segment = nrow_per_segment,
+      #             keep_remaining = FALSE
+      #           )
+      #         }, 
+      #         .keep = TRUE
+      #       )
+      #     }
+      #   )
 
+      
+      
+      
+      
+      
+      "this works properly" 
+      
+      chopped_datasets <- map(
+          .x = kept_behaviours, 
+          .f = ~{
+            .x %>% 
+              group_by(sheep_number) %>% 
+              group_map(
+                .f = ~{
+                  chop(
+                    .x,
+                    nrow_per_segment = nrow_per_segment, 
+                    keep_remaining = FALSE
+                    )
+                  }
+                )
+            }
+          )
+      
+      
+      
+      
+      
+      
         ## Now `chopped_datasets` is a list of 3 levels of data. 
         ## The first level is the behaviours. The second level is
         ## the sheep number. The third level is the segments.
@@ -250,19 +280,31 @@ chop_data <- function(
           for (j in seq_along(sheep_identifier)) { 
 
             for (k in seq_along(chopped_datasets[[i]][[j]])) {
-              
-            # write `chopped_data` segments to csv files
-            write_csv(
-              x = chopped_datasets[[i]][[j]][[k]], 
-              file = here(
+             
+              # Store path where chopped data will be saved 
+              path = here(
                 'data', 
                 str_glue('python_', behaviours, '_', seconds, 's'),
                 str_glue('b_', behaviours_to_include[[i]]), # before behaviours_to_keep[[1]][[i]], 
                 str_glue('sheep_', sheep_identifier[[j]]),
                 str_glue('segment_', k)
-              ),
-            )
-
+              )
+              
+              # write `chopped_data` segments to csv files
+              write_csv(
+                x = chopped_datasets[[i]][[j]][[k]], 
+                file = path 
+                )
+              
+              # Print where the data is being saved 
+              print(
+                str_glue(
+                  "Chopped data is stored at: ", 
+                  path, 
+                  "\n"
+                )
+              )
+              
             }
           }
         }

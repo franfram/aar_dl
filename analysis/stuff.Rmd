@@ -19,3 +19,12 @@ Warning\
 Risk of data leak Do not use minmax_scale unless you know what you are doing. A common mistake is to apply it to the entire data before splitting into training and test sets. This will bias the model evaluation because information would have leaked from the test set to the training set. In general, we recommend using MinMaxScaler within a Pipeline in order to prevent most risks of data leaking: pipe = make_pipeline(MinMaxScaler(), LogisticRegression()).
 
 "
+- Maybe we should make a category named "other" so that the CNN could allocate all the other
+segments of the data that the CNN is not so sure about. So if we only have the categories "walk" "eat" "rest",
+the other behaviours such as "fast walk" or "scratch", will be allocated here, increasing the error of the model. 
+
+
+- To make a quick and dirty test set, you could remove some random samples (about 10 or 20 percent) of the fully wrangled dataset and store them
+in a test dataset. Then you just split the remaining rows of the fully wrangled dataset into training and validating with fastai. 
+
+
