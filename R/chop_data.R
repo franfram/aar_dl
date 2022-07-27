@@ -30,8 +30,6 @@ chop_data <- function(
   #   to be kept, in the case where the number of segments is not a whole number.
   #   If TRUE (default), the last segment will contain the remaining rows. If 
   #   FALSE, remaining rows will be dropped. 
-
-
   chop <- function(
     dataset, 
     nrow_per_segment, 
@@ -90,32 +88,6 @@ chop_data <- function(
   # behaviours_key == "A"
   # seconds_per_segment <- 5
   # wrangled_full_data <- tar_read(wrangled_full_data)
-
-  # Create directories. The parent folder is going to be 
-  # named str_glue("python_", behaviours, "_", seconds, "s"). This folder will contain sub-folders 
-  #  with names contained in `behaviours_to_include`. And then inside of each of 
-  # these sub-folders, there will be folders named after the sheep number. Inside
-  # of each of these sheep number folders, we will store the chopped data.
-  for (i in seq_along(behaviours_to_include)) {
-
-    # get sheep numbers of each behaviour sub-dataset
-    sheep_identifier <- kept_behaviours[[i]]$sheep_number %>% unique
-    
-    for (j in seq_along(sheep_identifier)) { 
-
-      # Create behaviour sub-folders and sheep_number 
-      # sub-sub-folders and store file_path for writing csvs
-      dir_create(
-        here(
-          "data", 
-          str_glue("python_", behaviours, "_", seconds, "s"),
-          str_glue("b_", behaviours_to_include[[i]]),# before behaviours_to_keep[[1]][[i]], 
-          str_glue("sheep_", sheep_identifier[[j]])
-        )
-      )
-
-    }    
-  }
 
 
 
@@ -178,6 +150,40 @@ chop_data <- function(
         )
       }
 
+
+      # Create directories. The parent folder is going to be 
+      # named str_glue("python_", behaviours, "_", seconds, "s"). This folder will contain sub-folders 
+      #  with names contained in `behaviours_to_include`. And then inside of each of 
+      # these sub-folders, there will be folders named after the sheep number. Inside
+      # of each of these sheep number folders, we will store the chopped data.
+      for (i in seq_along(behaviours_to_include)) {
+    
+        # get sheep numbers of each behaviour sub-dataset
+        sheep_identifier <- kept_behaviours[[i]]$sheep_number %>% unique
+        
+        for (j in seq_along(sheep_identifier)) { 
+          
+          # Define path of directores
+          path_dirs <- here(
+              "data", 
+              str_glue("python_", behaviours, "_", seconds, "s"),
+              str_glue("b_", behaviours_to_include[[i]]),# before behaviours_to_keep[[1]][[i]], 
+              str_glue("sheep_", sheep_identifier[[j]])
+            )
+          # Create behaviour sub-folders and sheep_number 
+          # sub-sub-folders and store file_path for writing csvs
+          dir_create(path_dirs)
+          
+          # Print folder created
+          print(
+            str_glue(
+              "Created the following directory: \n", 
+              path_dirs, 
+              "\n"
+            )
+          )
+        }    
+      }
 
       # split `wrangled_full_data` into sub-datasets containing a given behaviour (here we include all the behaviours present in the full dataset)
       behaviour_datasets <- wrangled_full_data %>% 
@@ -282,7 +288,7 @@ chop_data <- function(
             for (k in seq_along(chopped_datasets[[i]][[j]])) {
              
               # Store path where chopped data will be saved 
-              path = here(
+              path_files = here(
                 'data', 
                 str_glue('python_', behaviours, '_', seconds, 's'),
                 str_glue('b_', behaviours_to_include[[i]]), # before behaviours_to_keep[[1]][[i]], 
@@ -293,14 +299,14 @@ chop_data <- function(
               # write `chopped_data` segments to csv files
               write_csv(
                 x = chopped_datasets[[i]][[j]][[k]], 
-                file = path 
+                file = path_files
                 )
               
               # Print where the data is being saved 
               print(
                 str_glue(
-                  "Chopped data is stored at: ", 
-                  path, 
+                  "Chopped data is stored at: \n", 
+                  path_files, 
                   "\n"
                 )
               )
