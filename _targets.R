@@ -1,3 +1,6 @@
+# renv setup
+renv::activate()
+
 ## Load your packages, e.g. library(targets).
 source("./packages.R")
 
@@ -8,8 +11,6 @@ lapply(list.files("./R", full.names = TRUE), source)
 options(fnmate_searcher = "git_grep")
 options(fnmate_quote_jump_regex = TRUE) 
 
-# renv setup
-renv::activate()
 
 ## Future setup
 library(future)

@@ -7,9 +7,9 @@
 #' @title Chop data into segments
 #' @param wrangled_full_data
 #' UPDATE WITH FOR LOOP CORRECTION
-#' @param behaviours_key pass a string with a letter to indicate which behaviours to include.
+#' @param behaviours_key pass a vector with the letters to indicate which behaviours to include.
 #'  options are A, B, C, D, E or F. 
-#' @param seconds_per_segment pass an integer to indicate the length of the segments in seconds.
+#' @param seconds_per_segment pass an integer vector to indicate the length of the segments in seconds.
 #'  options are 5 to 1. 
 chop_data <- function(
   wrangled_full_data, 
@@ -35,51 +35,56 @@ chop_data <- function(
     nrow_per_segment, 
     keep_remaining = FALSE 
   ) {
-    
-    n_segments <- nrow(dataset) / nrow_per_segment
-    n_segments_floor <- floor(n_segments)
-    
-    output <- list()   
-    for (i in 1:n_segments_floor) {
-      segment_head <- ((i - 1) * nrow_per_segment + 1)
-      segment_tail <- (i * nrow_per_segment)
+
+    # Write condition to avoid problems with very small sheep-level datasets
+    if (nrow(dataset) > nrow_per_segment) {
+
+      n_segments <- nrow(dataset) / nrow_per_segment
+      n_segments_floor <- floor(n_segments)
       
-      output[[i]] <-  dataset %>%  
-        slice(segment_head:segment_tail)
-      
-    }
-    
-    print(
-      paste0(
-        "chopped dataset into ", 
-        n_segments_floor, 
-        " segments"
-      )
-    )
-    
-    if (keep_remaining == TRUE) {
-      output[[i + 1]] <- dataset %>% 
-        slice(segment_tail:nrow(dataset))
+      output <- list()   
+      for (i in 1:n_segments_floor) {
+        segment_head <- ((i - 1) * nrow_per_segment + 1)
+        segment_tail <- (i * nrow_per_segment)
+        
+        output[[i]] <-  dataset %>%  
+          slice(segment_head:segment_tail)
+        
+      }
       
       print(
         paste0(
-          "Kept remaining rows inside an extra ", 
-          nrow(output[[i + 1]]),
-          " row segment"
+          "chopped dataset into ", 
+          n_segments_floor, 
+          " segments"
         )
       )
+      
+      if (keep_remaining == TRUE) {
+        output[[i + 1]] <- dataset %>% 
+          slice(segment_tail:nrow(dataset))
+        
+        print(
+          paste0(
+            "Kept remaining rows inside an extra ", 
+            nrow(output[[i + 1]]),
+            " row segment"
+          )
+        )
+      } 
+    } else {
+      print("doin NOTIN")
     } 
-    
   
   return(output)
     
   }
 
   # interactive target
-  behaviours_key  <- c('A', 'B', 'C', 'D', 'E', 'F')
-  seconds_per_segment <- c(5:1)
+  behaviours_key  <- c('B')#c('A', 'B', 'C', 'D', 'E', 'F')
+  seconds_per_segment <- 5#c(5:1)
   
-  #wrangled_full_data  <- tar_read(wrangled_full_data)
+  wrangled_full_data  <- tar_read(wrangled_full_data)
   # behaviours_key = c('A', 'B', 'C', 'D', 'E', 'F'), 
   # seconds_per_segment = c(5:1)
  
@@ -209,9 +214,68 @@ chop_data <- function(
 
 
 
+#       df <- tibble(a = 1:100)
+
+#       split <- df |> 
+#         group_by(ntile(n = n() / 20)) |> 
+#         group_split(.keep = FALSE)
 
 
- 
+
+#       .x = kept_behaviours[[4]]
+# #     
+#       .x %>% 
+
+        
+#       chop(.x, nrow_per_segment = nrow_per_segment)
+      
+#       .x %>% 
+#         group_by(sheep_number) %>% 
+#         group_map(
+#           ~ chop(.x, nrow_per_segment = nrow_per_segment)
+#         )
+
+
+#       split <- .x |> 
+#         group_by(ntile(n = n() / nrow_per_segment)) |> 
+#         group_split(.keep = FALSE)
+
+
+#       split2 <- chop(
+#         .x, 
+#         nrow_per_segment = nrow_per_segment, 
+#         keep_remaining = FALSE
+#       )
+
+#       kept_behaviours %>% 
+#         group_by(ntile(n = n() / nrow_per_segment)) %>%
+#         group_split(.keep = FALSE)
+
+
+
+#       .x %>% 
+#         group_by(sheep_number) %>%
+#         group_by(ntile(n = n() / nrow_per_segment)) %>% 
+#         group_split(.keep = FALSE)
+
+#       test <- .x %>% group_by(sheep_number) %>%
+#         group_split()
+
+
+
+#       .x  <- test[[1]]
+#       .x %>% 
+#         group_by(ntile(n = n() / nrow_per_segment)) %>% 
+#         group_split(.keep= FALSE)
+
+
+#         map(
+#           .f = ~{
+#             .x  %>% 
+#               group_by(ntile(n = n() / nrow_per_segment)) %>%
+#               group_split(.keep = FALSE)
+#         }
+#         )
 
 
 
@@ -219,73 +283,108 @@ chop_data <- function(
       ## Inside each behaviours data set (kept_behaviours[[i]]) we will first group
       ## by `sheep_number` and then chop the data into segments.
       # chopped_datasets <- map(
-      #     .x = kept_behaviours, 
+      #     .x = kept_behaviours,
       #     .f = ~{
-      #       .x %>% 
-      #         group_by(sheep_number) %>% 
+      #       .x %>%
+      #         group_by(sheep_number) %>%
       #         group_map(
       #           .f = ~{
-      #             chop(
-      #               .x,
-      #               nrow_per_segment = nrow_per_segment, 
-      #               keep_remaining = FALSE
-      #               )
-      #             }
+      #             .x |> 
+      #               group_by(ntile(n = n() / nrow_per_segment)) |> 
+      #               group_split(.keep = FALSE)
+      #           }
       #           )
-      #       }
-      #     )
-      # 
-      
-      
-      
-      
-      
+      #         }
+      #           )
+            
+          
+
+      # Chop (dropping remaining rows) data into segments. 
+      ## Inside each behaviours data set (kept_behaviours[[i]]) we will first group
+      ## by `sheep_number` and then chop the data into segments.
+      chopped_datasets <- map(
+          .x = kept_behaviours,
+          .f = ~{
+            .x %>%
+              group_by(sheep_number) %>%
+              group_map(
+                .f = ~{
+                  # Write condition to avoid problems with very small sheep-level datasets
+                  if (nrow(.x) >= nrow_per_segment) { 
+                    chop(
+                      .x,
+                      nrow_per_segment = nrow_per_segment,
+                      keep_remaining = FALSE
+                      )
+                  }
+                }
+              )
+            }
+          )
         ## Now `chopped_datasets` is a list of 3 levels of data. 
         ## The first level is the behaviours. The second level is
         ## the sheep number. The third level is the segments.
-          "!!!!! this is not happening, the 3rd level contains all the sheeps, and the 2nd level has length 1
-          theres probably a mistake when doing the map chop data, check that map in the rmd
-          thats why downstream there the index error with chopped_datasets[[i]][[j]]. J is only 1"
 
+      
+      
+      
+      
         # Store chopped data
-        # for (i in seq_along(behaviours_to_include)) {
-        # 
-        #   # Get sheep numbers of each behaviour sub-dataset
-        #   sheep_identifier <- kept_behaviours[[i]]$sheep_number %>% unique
-        #   
-        #   for (j in seq_along(sheep_identifier)) { 
-        # 
-        #     for (k in seq_along(chopped_datasets[[i]][[j]])) {
-        #      
-        #       # Store path where chopped data will be saved 
-        #       path_files = here(
-        #         'data', 
-        #         str_glue('python_', behaviours, '_', seconds, 's'),
-        #         str_glue('b_', behaviours_to_include[[i]]), # before behaviours_to_keep[[1]][[i]], 
-        #         str_glue('sheep_', sheep_identifier[[j]]),
-        #         str_glue('segment_', k)
-        #       )
-        #       
-        #       # write `chopped_data` segments to csv files
-        #       write_csv(
-        #         x = chopped_datasets[[i]][[j]][[k]], 
-        #         file = path_files
-        #         )
-        #       
-        #       # Print where the data is being saved 
-        #       print(
-        #         str_glue(
-        #           "Stored chopped data at: \n", 
-        #           path_files, 
-        #           "\n"
-        #         )
-        #       )
-        #       
-        #     }
-        #   }
-        # }
+        for (i in seq_along(behaviours_to_include)) {
 
+          # Get sheep numbers of each behaviour sub-dataset
+          sheep_identifier <- kept_behaviours[[i]]$sheep_number %>% unique
 
+          for (j in seq_along(sheep_identifier)) {
+
+            for (k in seq_along(chopped_datasets[[i]][[j]])) {
+
+              # Store path where chopped data will be saved
+              path_files = here(
+                'data',
+                str_glue('python_', behaviours, '_', seconds, 's'),
+                str_glue('b_', behaviours_to_include[[i]]), # before behaviours_to_keep[[1]][[i]],
+                str_glue('sheep_', sheep_identifier[[j]]),
+                str_glue('segment_', k)
+              )
+
+              # write `chopped_data` segments to csv files
+              write_csv(
+                x = chopped_datasets[[i]][[j]][[k]],
+                file = path_files
+                )
+
+              # Print where the data is being saved
+              print(
+                str_glue(
+                  "Stored chopped data at: \n",
+                  path_files,
+                  "\n"
+                )
+              )
+
+            }
+          }
+        }
+
+        # Write test to check if all segments are of same length
+        test = list()
+        for (j in seq_along(chopped_datasets)) {
+          for (k in seq_along(chopped_datasets[[j]])) {
+            for (m in seq_along(chopped_datasets[[j]][[k]])) {
+
+              test[m * j * k] <- print(nrow(chopped_datasets[[j]][[k]][[m]]))
+
+              check  <- test %>% unlist() %>% unique()
+
+              if (length(check) == 1) {
+                print("All segments have the same number of rows")
+              } else {
+                print("Segments have different number of rows")
+              }
+            }
+          }
+        }
 
       
 
