@@ -56,24 +56,33 @@ tar_plan(
 
     # Chop data into segments (using a maping target)
     ## Define mappings
-    tar_target(
-        behav, c("A", "B", "C", "D", "E", "F")
-    ), 
-    tar_target(
-        seconds, c(5:1)
-    ), 
+    # tar_target(
+    #     behav, c("A", "B", "C", "D", "E", "F")
+    # ), 
+    # tar_target(
+    #     seconds, c(5:1)
+    # ), 
 
     # Chop
     tar_target(
         chopped_data, 
         chop_data(
             wrangled_full_data = wrangled_full_data,
-            behaviours_key = behav,  
-            seconds_per_segment = seconds
+            behaviours_key = ('A'),#, 'B', 'C'),  
+            seconds_per_segment = 5
         )#, 
          #pattern = cross(behav, seconds), 
          #iteration = "list"
     ),
+
+    # splitted_data = split_train_validate_test(
+    #     # chopped_data? maybe return paths and use them?
+    #     validate_percentage = 0.2, 
+    #     test_percentage = 0.1
+    # )
+
+
+
 
     # tar_target(
     #     test, 
