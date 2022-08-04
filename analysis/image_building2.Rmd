@@ -1,0 +1,632 @@
+
+TO DO: 
+- Check for a minmax scaler similar to that python one but in R (to avoid some
+problems with ptp equal to 0), search in the mlverse
+
+
+
+```{r setup}
+knitr::opts_knit$set(root.dir = here::here())
+```
+
+```{r}
+getwd()
+```
+
+
+
+```{r}
+library(tidyverse)
+library(fs)
+library(here)
+library(conflicted)
+library(data.table)
+library(reticulate)
+#use_condaenv("aar")
+#library(here)
+```
+
+We will first inspect one segment of data, and then create an image for only
+that segment. Then we will make a function to create the image for all segments. 
+
+
+```{r}
+# add .txt??
+# Define path of one segment of data
+segment_path <- path("data", "python_A_5s", "b_eating", "sheep_5", "segment_1")
+segment_path
+
+```
+
+
+```{r}
+# Define mapping between behavior name and behaviour directory
+predicted_labels_map  <- tribble(
+    ~behaviour_dir, ~behaviour_name,
+    "b_1", "eating",
+    "b_2", "resting",
+    "b_3", "vigilance"
+)
+
+
+predicted_labels_map
+```
+
+
+
+```{r}
+# Read segment and select accelerometer columns
+segment  <- read_csv(here(segment_path)) %>%
+    select(matches("acc|mag|pitch|roll"))
+
+
+
+```
+
+
+
+Data summaries
+```{r}
+summary(segment)
+```
+
+
+A few plots
+```{r}
+time <- seq_len(nrow(segment))
+
+plot_data <- segment %>%
+    mutate("time" = time) %>%
+    pivot_longer(
+        contains("acc"),
+        names_to = "acc_axis",
+        values_to = "acc_value"
+    )
+    
+    
+plot <- plot_data %>%
+    ggplot() +
+    geom_line(aes(x = time, y = acc_value, color = acc_axis))
+
+
+
+plot
+
+```
+
+
+
+
+
+
+
+
+Now we need to build images for all segments. To acomplish that we will use the\  
+strategy from this paper.\  
+(https://www.researchgate.net/publication/259899616_Images_in_mind_-_Design_metaphor_and_method_to_classify_driver_distraction_in_critical_situations)\ 
+
+![image from paper](paper-image.png)
+The strategy consists on:\  
+    - Normalize (range 0-1) each feature (e.g., acc_x) but in relation to the other features\ 
+    (acc_y, acc_z). If we Normalize acc_x separate from acc_y and acc_z, we\ 
+    will lose information that, for example, there was a lot of acceleration in\  
+    the x axis but not in the y or z. This is done by computing the parameters\  
+    needed for the feature normalization (i.e., max, mean, range) using the\ 
+    data from the 3 axis. This feature normalization also needs to be done \
+    across all segments (i.e., agregating segments first), because if done per\
+    segment then there will be information loss between activities. But an\ 
+    important thing to keep in mind is that this aggregation of segments has to\ 
+    be done within each set (training, validation, test) or else there will be\ 
+    some information leakage between the sets and we will overestimate the \ 
+    performance of the model.\ 
+    
+    - Convert range 0-1 (due to normalization) to range 0-255 for grayscale\
+    image. 
+
+    - Save images.  
+
+ 
+
+
+
+
+
+# Prep training data for image building
+
+Get Max, Min, and PeakToPeak (max - min) values for the whole training set. 
+```{r}
+# Get paths of all segments corresponding to the training set
+training_paths <- dir_ls(
+    here("data", "python_A_5s"),
+    recurse = TRUE,
+    type = "file"
+)
+
+"esto hay que hacerlo por acc, desp de mag, desp de pitch, desp de roll"
+
+
+# Read all segments, select acc columns, flatten, and append all segments
+vars_to_plot <- c("acc", "mag", "pitch", "roll")
+
+training_segments_vector <- list()
+
+for (var in seq_along(vars_to_plot)){
+
+  training_segments_vector <- training_paths %>%
+      map(
+          .f = ~ {
+              .x  %>%
+                fread() %>%
+                select(matches(vars_to_plot[var])) %>%
+                flatten %>%
+                unlist(use.names = FALSE)
+          }
+      ) %>%
+      unlist(use.names = FALSE)
+
+}
+
+
+names(training_segments_vector)  <- vars_to_plot
+
+
+
+
+
+
+
+    
+# Get Max, Min, and PeakToPeak (max - min) values for the whole training set.
+
+training_max <- max(training_segments_vector)
+
+training_min <- list()
+training_min <- min(training_segments_vector)
+
+training_ptp <- list()
+training_ptp <- training_max - training_min
+
+
+# Define Normalization function and Normalization + 0-255 function
+
+my_norm <- function(x) {
+    return(
+        (x - training_min) / training_ptp
+    )
+}
+
+my_norm_bit <- function(x) {
+    return(
+        ((x - training_min) / training_ptp) * 255
+    )
+}
+```
+
+
+Normalize each acc_axis of test segment and plot
+```{r}
+segment
+segment_norm <- my_norm(segment)
+segment_norm %>% str()
+
+
+plot_data <- segment_norm %>%
+    mutate("time" = time) %>%
+    pivot_longer(
+        contains("acc"),
+        names_to = "acc_axis",
+        values_to = "acc_value"
+    )
+    
+    
+plot <- plot_data %>%
+    ggplot() +
+    geom_line(aes(x = time, y = acc_value, color = acc_axis))
+
+
+
+plot
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+Now normalize all segments
+
+```{r}
+# Read `training_segments`, select acc columns and apply my_norm_bit() function.
+training_segments_norm_bit <- training_paths %>%
+    map(
+        .f = ~ {
+            .x  %>%
+                fread() %>%
+                select(contains("acc")) %>%
+                my_norm_bit() %>% 
+                as_tibble()
+        }
+    )
+
+test <- training_segments_norm_bit[[1]]
+
+
+image(as.matrix(test))
+
+
+test2 <- test %>% as.data.table %>% as.matrix %>% t
+
+test2
+
+image(test2)
+```
+
+```{r}
+training_paths_all <- c('b_1', 'b_2', 'b_3') %>%
+  map(
+    ~ dir_ls(
+        here("data", "python_1_training", .x),
+        recurse = TRUE,
+        type = "file"
+  )
+)
+
+training_paths_eating <- training_paths_all[[1]]
+training_paths_resting <- training_paths_all[[2]]
+training_paths_vigilance <- training_paths_all[[3]]
+```
+
+
+
+
+```{python}
+#########################################################################################
+################# THIS SHIT (KINDA) WORKS ########################
+
+# if not path.exists():
+#     path.mkdir()
+#     for o in bear_types:
+#         dest = (path/o)
+#         dest.mkdir(exist_ok=True)
+#         results = search_images_bing(key, f'{o} bear')
+#         download_images(dest, urls=results.attrgot('contentUrl'))
+
+
+
+
+from PIL import Image
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import re
+import os
+#from pyprojroot import here 
+!pwd
+
+
+py_paths_all = r.training_paths
+py_paths_eating = r.training_paths_eating
+py_paths_resting = r.training_paths_resting
+py_paths_vigilance = r.training_paths_vigilance
+py_seg_max = r.training_max
+py_seg_min = r.training_min
+py_seg_ptp = r.training_ptp
+
+
+predicted_labels_map = {
+    'b_1': 'eating',
+    'b_2': 'resting',
+    'b_3': 'vigilance'
+}
+
+
+
+
+# Name of the image
+T_eating = []
+T_resting = []
+T_vigilance = []
+
+# corresponding behaviour of each image. 
+behav_eating = []
+behav_resting = []
+behav_vigilance = []
+
+# Get labels for images
+
+#for x in range(0, len(py_paths)):
+  # unlabeled_data = py_paths[x].split('/')[6:]
+  # unlabeled_data[0] = predicted_labels_map[unlabeled_data[0]].replace(' ', '_')
+  # T.append(str('_'.join(unlabeled_data)))  
+  # behav.append(unlabeled_data[0])
+
+
+
+
+for x in range(0, len(py_paths_eating)):
+  unlabeled_data_eating = py_paths_eating[x].split('/')[6:]
+  unlabeled_data_eating[0] = predicted_labels_map[unlabeled_data_eating[0]].replace(' ', '_')
+  T_eating.append(str('_'.join(unlabeled_data_eating)))  
+  behav_eating.append(unlabeled_data_eating[0])
+
+for x in range(0, len(py_paths_resting)):
+  unlabeled_data_resting = py_paths_resting[x].split('/')[6:]
+  unlabeled_data_resting[0] = predicted_labels_map[unlabeled_data_resting[0]].replace(' ', '_')
+  T_resting.append(str('_'.join(unlabeled_data_resting)))  
+  behav_resting.append(unlabeled_data_resting[0])
+  
+for x in range(0, len(py_paths_vigilance)):
+  unlabeled_data_vigilance = py_paths_vigilance[x].split('/')[6:]
+  unlabeled_data_vigilance[0] = predicted_labels_map[unlabeled_data_vigilance[0]].replace(' ', '_')
+  T_vigilance.append(str('_'.join(unlabeled_data_vigilance)))  
+  behav_vigilance.append(unlabeled_data_vigilance[0])
+  
+ 
+ 
+ 
+ 
+  
+# len_py_paths = len(py_paths)
+# 
+# # Build images
+# for x in range(0, len_py_paths):#len(py_paths)): 
+#   stest = pd.read_csv(py_paths[x], header = 0).filter(regex = 'acc', axis = 1)
+#   #stest 
+#  
+#   acc_data = stest.values.flatten()
+#   #acc_data
+#  
+#   normalized = stest.apply(lambda x: 255 * ((x - py_seg_min) / py_seg_ptp))
+#   #normalized.describe() 
+#   img_array = normalized.to_numpy().astype(np.uint8).T
+#   #print(img_array)
+#   # 
+#   im = Image.fromarray(img_array)
+#   print(im)
+#   test = im.save(str(f'../images/training/{T[x]}.png'))
+#   #test = im.save(str(f'../images/{T[x]}.png'))
+
+
+
+
+
+
+
+
+
+max_range = 600
+
+# Build images test eating
+for x in range(0, max_range):#len(py_paths)): 
+  stest_eating = pd.read_csv(py_paths_eating[x], header = 0).filter(regex = 'acc', axis = 1)
+  #stest 
+ 
+  acc_data_eating = stest_eating.values.flatten()
+  #acc_data
+ 
+  normalized_eating = stest_eating.apply(lambda x: 255 * ((x - py_seg_min) / py_seg_ptp))
+  #normalized.describe() 
+  img_array_eating = normalized_eating.to_numpy().astype(np.uint8).T
+  #print(img_array)
+  # 
+  im_eating = Image.fromarray(img_array_eating)
+  print(im_eating)
+  test_eating = im_eating.save(str(f'./images2/training/eating/{T_eating[x]}.png'))
+  #test = im.save(str(f'../images/{T[x]}.png'))
+
+
+# Build images test resting
+for x in range(0, max_range):#len(py_paths)): 
+  stest_resting = pd.read_csv(py_paths_resting[x], header = 0).filter(regex = 'acc', axis = 1)
+  #stest 
+ 
+  acc_data_resting = stest_resting.values.flatten()
+  #acc_data
+ 
+  normalized_resting = stest_resting.apply(lambda x: 255 * ((x - py_seg_min) / py_seg_ptp))
+  #normalized.describe() 
+  img_array_resting = normalized_resting.to_numpy().astype(np.uint8).T
+  #print(img_array)
+  # 
+  im_resting = Image.fromarray(img_array_resting)
+  print(im_resting)
+  test_resting = im_resting.save(str(f'./images2/training/resting/{T_resting[x]}.png'))
+  #test = im.save(str(f'../images/{T[x]}.png'))
+
+
+# Build images test vigilance
+for x in range(0, max_range):#len(py_paths)): 
+  stest_vigilance = pd.read_csv(py_paths_vigilance[x], header = 0).filter(regex = 'acc', axis = 1)
+  #stest 
+ 
+  acc_data_vigilance = stest_vigilance.values.flatten()
+  #acc_data
+ 
+  normalized_vigilance = stest_vigilance.apply(lambda x: 255 * ((x - py_seg_min) / py_seg_ptp))
+  #normalized.describe() 
+  img_array_vigilance = normalized_vigilance.to_numpy().astype(np.uint8).T
+  #print(img_array)
+  # 
+  im_vigilance = Image.fromarray(img_array_vigilance)
+  print(im_vigilance)
+  test_vigilance = im_vigilance.save(str(f'./images2/training/vigilance/{T_vigilance[x]}.png'))
+  #test = im.save(str(f'../images/{T[x]}.png'))
+
+
+
+#Notes: PIL.Image.Image image mode=L means 8-bit pixels, black and white. 
+
+
+
+
+
+
+
+
+### when u make a small loop (maybe 10) , then opening them in the file explorer
+### u can see the images clearly right. when making the whole loop (len_py_paths),
+### when you open them in the file explorer you cant see the bit image properly, 
+### it's only blurry. 
+##############################################################################3
+
+
+
+
+
+
+
+
+
+
+
+list_test = []
+for x in range(0, 5):
+  unlabeled_data = py_paths[x].split('/')[6:]
+  unlabeled_data[0] = predicted_labels_map[unlabeled_data[0]].replace(' ', '_')
+  #print(unlabeled_data)
+  image_name = str('_'.join(unlabeled_data) + '.jpg')
+  list_test.append(x)
+
+
+for x in range(0, 5):
+  #print(py_paths[x])
+  print(x)
+  stest = pd.read_csv(py_paths[x], header = 0).filter(regex = 'acc', axis = 1)
+  #stest 
+   
+  acc_data = stest.values.flatten()
+  #acc_data
+   
+  normalized = stest.apply(lambda x: 255 * ((x - py_seg_min) / py_seg_ptp))
+  #normalized.describe() 
+  img_array = normalized.to_numpy().astype(np.uint8).T
+  #print(img_array)
+  # 
+  im = Image.fromarray(img_array)
+  #print(im)
+   
+   
+  unlabeled_data = py_paths[x].split('/')[6:]
+  unlabeled_data[0] = predicted_labels_map[unlabeled_data[0]].replace(' ', '_')
+  #print(unlabeled_data)
+  image_name=str('_'.join(unlabeled_data) + '.jpg')
+  #image_path = here(f'./images/{image_name}')
+  print(image_name)
+  #print(image_name)
+  #plt.imshow(img_array, cmap='Greys') # this shouldn't be needed for saving the image
+
+  im.save(fp=image_name)
+  # path_to_save = os.path.join('./images', image_name)
+  # path_to_save2 = str('./images/' + image_name)
+  # 
+  # im.save(image_name)
+  
+  
+
+
+
+#make a for loop printing the image names to see what is happening
+for x in range(0, 10): 
+  unlabeled_data = py_paths[x].split('/')[6:]
+  # print(unlabeled_data)
+  unlabeled_data[0] = predicted_labels_map[unlabeled_data[0]].replace(' ', '_')
+  # print(unlabeled_data)
+  image_name = str('_'.join(unlabeled_data) + '.png')
+  print(image_name)
+  path_to_save = os.path.join('./images', image_name)
+  print(path_to_save)
+  path_to_save2 = str('./images/' + image_name)
+  print(path_to_save2)
+
+
+
+
+
+
+
+
+
+type(py_labels)
+type(py_paths)
+range(0, 10)
+len(py_paths)
+
+for x in range(0, len(py_paths)):#[1, 2, 3]:
+  print(py_paths[x])
+
+
+for x in range(0, 10): 
+  print(x)
+
+View(py_paths)
+
+
+py_paths[0]
+py_paths[3]
+
+
+#Image.open(str(f'../images/training/{T[x]}.png'))
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+getwd()
+
+
+```
+
+# WITH TARGETS
+
+
+```{r}
+trainingNormParams <- tar_read(trainingNormParams)
+
+training_max <- trainingNormParams$max
+training_min <- trainingNormParams$min
+training_ptp <- trainingNormParams$ptp
+
+
+
+
+
+
+validationPaths <- tar_read(validationPaths)
+
+test <- validationPaths %>% 
+  map(
+    .f = ~ {
+      .x %>% 
+        fread %>% 
+        select(contains("acc")) %>% 
+        flatten %>% 
+        unlist(use.names = FALSE)
+    }
+  ) 
+
+
+
+
+
+faildata <- read_csv(here("data", "python_1_validation", "b_3", "sheep_1", "segment_37")) %>% 
+  select(contains("acc"))
+
+
+
+
+
+```
+
+
+

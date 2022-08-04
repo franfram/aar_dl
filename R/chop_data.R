@@ -81,18 +81,12 @@ chop_data <- function(
   }
 
   # interactive target
-  behaviours_key  <- c('B')#c('A', 'B', 'C', 'D', 'E', 'F')
-  seconds_per_segment <- 5#c(5:1)
+  # behaviours_key  <- c('A', 'B', 'C')#c('A', 'B', 'C', 'D', 'E', 'F')
+  # seconds_per_segment <- 5#c(5:1)
   
-  wrangled_full_data  <- tar_read(wrangled_full_data)
+  # wrangled_full_data  <- tar_read(wrangled_full_data)
   # behaviours_key = c('A', 'B', 'C', 'D', 'E', 'F'), 
-  # seconds_per_segment = c(5:1)
  
-
-  # behaviours_key <- "A"
-  # behaviours_key == "A"
-  # seconds_per_segment <- 5
-  # wrangled_full_data <- tar_read(wrangled_full_data)
 
 
 
@@ -193,8 +187,8 @@ chop_data <- function(
           # Define path of directores
           path_dirs <- here(
               "data", 
-              str_glue("python_", behaviours, "_", seconds, "s"),
-              str_glue("b_", behaviours_to_include[[i]]),# before behaviours_to_keep[[1]][[i]], 
+              str_glue("python_complete_", behaviours, "_", seconds, "s"),
+              behaviours_to_include[[i]],# before behaviours_to_keep[[1]][[i]], 
               str_glue("sheep_", sheep_identifier[[j]])
             )
           # Create behaviour sub-folders and sheep_number 
@@ -214,89 +208,6 @@ chop_data <- function(
 
 
 
-#       df <- tibble(a = 1:100)
-
-#       split <- df |> 
-#         group_by(ntile(n = n() / 20)) |> 
-#         group_split(.keep = FALSE)
-
-
-
-#       .x = kept_behaviours[[4]]
-# #     
-#       .x %>% 
-
-        
-#       chop(.x, nrow_per_segment = nrow_per_segment)
-      
-#       .x %>% 
-#         group_by(sheep_number) %>% 
-#         group_map(
-#           ~ chop(.x, nrow_per_segment = nrow_per_segment)
-#         )
-
-
-#       split <- .x |> 
-#         group_by(ntile(n = n() / nrow_per_segment)) |> 
-#         group_split(.keep = FALSE)
-
-
-#       split2 <- chop(
-#         .x, 
-#         nrow_per_segment = nrow_per_segment, 
-#         keep_remaining = FALSE
-#       )
-
-#       kept_behaviours %>% 
-#         group_by(ntile(n = n() / nrow_per_segment)) %>%
-#         group_split(.keep = FALSE)
-
-
-
-#       .x %>% 
-#         group_by(sheep_number) %>%
-#         group_by(ntile(n = n() / nrow_per_segment)) %>% 
-#         group_split(.keep = FALSE)
-
-#       test <- .x %>% group_by(sheep_number) %>%
-#         group_split()
-
-
-
-#       .x  <- test[[1]]
-#       .x %>% 
-#         group_by(ntile(n = n() / nrow_per_segment)) %>% 
-#         group_split(.keep= FALSE)
-
-
-#         map(
-#           .f = ~{
-#             .x  %>% 
-#               group_by(ntile(n = n() / nrow_per_segment)) %>%
-#               group_split(.keep = FALSE)
-#         }
-#         )
-
-
-
-      # Chop (dropping remaining rows) data into segments. 
-      ## Inside each behaviours data set (kept_behaviours[[i]]) we will first group
-      ## by `sheep_number` and then chop the data into segments.
-      # chopped_datasets <- map(
-      #     .x = kept_behaviours,
-      #     .f = ~{
-      #       .x %>%
-      #         group_by(sheep_number) %>%
-      #         group_map(
-      #           .f = ~{
-      #             .x |> 
-      #               group_by(ntile(n = n() / nrow_per_segment)) |> 
-      #               group_split(.keep = FALSE)
-      #           }
-      #           )
-      #         }
-      #           )
-            
           
 
       # Chop (dropping remaining rows) data into segments. 
@@ -342,8 +253,8 @@ chop_data <- function(
               # Store path where chopped data will be saved
               path_files = here(
                 'data',
-                str_glue('python_', behaviours, '_', seconds, 's'),
-                str_glue('b_', behaviours_to_include[[i]]), # before behaviours_to_keep[[1]][[i]],
+                str_glue('python_complete_', behaviours, '_', seconds, 's'),
+                behaviours_to_include[[i]], # before behaviours_to_keep[[1]][[i]],
                 str_glue('sheep_', sheep_identifier[[j]]),
                 str_glue('segment_', k)
               )
@@ -375,15 +286,17 @@ chop_data <- function(
 
               test[m * j * k] <- print(nrow(chopped_datasets[[j]][[k]][[m]]))
 
-              check  <- test %>% unlist() %>% unique()
-
-              if (length(check) == 1) {
-                print("All segments have the same number of rows")
-              } else {
-                print("Segments have different number of rows")
-              }
             }
           }
+
+          check  <- test %>% unlist() %>% unique()
+
+          if (length(check) == 1) {
+            print("All segments have the same number of rows")
+          } else {
+            print("Segments have different number of rows ")
+          }
+
         }
 
       
