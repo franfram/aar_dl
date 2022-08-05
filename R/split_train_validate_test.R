@@ -16,11 +16,22 @@
 #' @title
 #' @param validate_percentage
 #' @param test_percentage
+#' @param behaviours_key pass a vector with the letters to indicate which behaviours to include.
+#'  options are A, B, C, D, E or F. 
+#' @param seconds_per_segment pass an integer vector to indicate the length of the segments in seconds.
+#'  options are 5 to 1.
 #' @return
 #' @author franfram
 #' @export
 split_train_validate_test <- function(validate_percentage = 0.2,
-                                      test_percentage = 0.1) {
+                                      test_percentage = 0.1
+                                      behaviours_key = c("A", "B", "C", "D", "E", "F"), 
+                                      seconds_per_segment = 5) {
+
+
+
+
+  "this has to loop through seconds and behaviours"
   # Get list of all the files within the complete data directory 
   complete_data_paths <- dir_ls(
     path = here("data", "python_complete_A_5s"),
@@ -81,8 +92,10 @@ split_train_validate_test <- function(validate_percentage = 0.2,
   # Split those sheeps into train, validate, and test sets according to the
   # (approximate) percentages passed as arguments
   ## Interactive stuff
+  "TO DELETE"
   validate_percentage = 0.2
   test_percentage = 0.1
+
   train_percentage = 1 - validate_percentage - test_percentage
 
   ## Define number of sheeps (for all behaviours) based on rounded-up validate and test percentages, 
@@ -100,9 +113,9 @@ split_train_validate_test <- function(validate_percentage = 0.2,
 
   ## Test that the test, validate, and train sets are correctly distributed
   if (unique(sheep_data_names_count == sheeps_test + sheeps_validate + sheeps_train)) {
-    print("Test, validate, and train sets are correctly distributed")
+    print("PASSING. Test, validate, and train sets are correctly distributed")
   } else {
-    print("FAIL. Test, validate, and train sets are NOT correctly distributed")
+    stop("FAILING. Test, validate, and train sets are NOT correctly distributed")
   }
   ## Now `sheeps_test` has length equal to the amount of behaviours, and contains the
   ## number of sheeps to be used for the test set. Same with `sheeps_validate` and `sheeps_train`.
@@ -110,33 +123,123 @@ split_train_validate_test <- function(validate_percentage = 0.2,
 
   # Now we will randomly select `sheeps_*` the complete data directory.
   # We have to sample in a way that no sheep is selected twice.
-  .x <- sheeps_test[[1]]
-  .x <- 1
-  .x <- 1:length(behaviour_names)
+  sheeps_test_selected <- list()
+  sheeps_validate_selected <- list()
+  sheeps_train_selected <- list()
 
-  j <- sheeps_test[[.x]]
-  "still have to map this"
-  sheeps_test_selected <- sheep_data_paths[[.x]][1:sheeps_test[[.x]]] %>% print
-  sheeps_validate_selected <- sheep_data_paths[[.x]][(sheeps_test[[.x]] + 1):(sheeps_validate[[.x]] + sheeps_test[[.x]])] %>% print
-  sheeps_train_selected <- sheep_data_paths[[.x]][(sheeps_validate[[.x]] + sheeps_test[[.x]] + 1):(sheep_data_names_count[[.x]] )] %>% print
-  # Test for this crappy code?
+  for (behav in seq_along(behaviour_names)) {
+    sheeps_test_selected[[behav]] <- sheep_data_paths[[behav]][1:sheeps_test[[behav]]] %>% print
+    sheeps_validate_selected[[behav]] <- sheep_data_paths[[behav]][(sheeps_test[[behav]] + 1):(sheeps_validate[[behav]] + sheeps_test[[behav]])] %>% print
+    sheeps_train_selected[[behav]] <- sheep_data_paths[[behav]][(sheeps_validate[[behav]] + sheeps_test[[behav]] + 1):(sheep_data_names_count[[behav]] )] %>% print
+  }
 
+  # Now `sheeps_*_selected` has length equal to the amount of behaviours, and contains the
+  # paths to the sheeps directories of each data-set. 
 
+  # Test that `sheeps_*_selected` is correctly distributed
+  for (behav in seq_along(behaviour_names)) {
+    if (
+      length(sheeps_test_selected[[behav]]) + length(sheeps_validate_selected[[behav]]) + length(sheeps_train_selected[[behav]]) == sheep_data_names_count[[behav]]
+    ) {
+      print(
+        str_glue(
+          "PASSING for {toupper(behaviour_names[[behav]])}. Test, validate, and train data paths are correctly distributed"))
+    } else {
+        stop(
+          "FAILING for {toupper(behaviour_names[[behav]])}. Test, validate, and train data paths are NOT correctly distributed")
+    }
+  }
+                                      
 
   # now we have to create the train, validate, and test directories, 
   # with the sheeps directories inside them. For that we could just
   # replace the word "complete" for "train", "validate", and "test" 
-  # out of the `sheeps_*_selected` paths.
+  # out of the `sheeps_*_selected` paths. 
+  # After that, we will copy the files from the `complete` directory to the `train`, `validate`, and `test` directories.
+  test_data_paths <- list()
+  validate_data_paths <- list()
+  train_data_paths <- list()
+  for(behav in seq_along(behaviour_names)) {
+    ## Get paths for test, validate, and train data directories
+    test_data_paths[[behav]] <- str_replace_all(
+      sheeps_test_selected[[behav]], c("complete" = "test")
+    )
+    validate_data_paths[[behav]] <- str_replace_all(
+      sheeps_validate_selected[[behav]], c("complete" = "validate")
+    )
+    train_data_paths[[behav]] <- str_replace_all(
+      sheeps_train_selected[[behav]], c("complete" = "train")
+    )
+
+    ## Create directories
+    dir_create(test_data_paths[[behav]])
+    dir_create(validate_data_paths[[behav]])
+    dir_create(train_data_paths[[behav]])
+
+    ## Copy files 
+    ### Test
+    dir_copy(
+      path = sheeps_test_selected[[behav]], 
+      new_path = test_data_paths[[behav]], 
+      overwrite = TRUE
+    )
+
+    ### Validate
+    dir_copy(
+      path = sheeps_validate_selected[[behav]], 
+      new_path = validate_data_paths[[behav]], 
+      overwrite = TRUE
+    )
+
+    ### Train
+    dir_copy(
+      path = sheeps_train_selected[[behav]], 
+      new_path = train_data_paths[[behav]], 
+      overwrite = TRUE
+    )
+  }
 
 
-  .x <- sheeps_test_selected[[1]]  
+  for (behav in seq_along(behaviour_names)) {
+    ## Test set
+    if (
+     test_test <- dir_ls(
+        path = test_data_paths[[behav]], 
+        type = 'file',
+        recurse = TRUE
+        ) %>% length != 0
+    ) {
+      print(str_glue("PASSING for {toupper(behaviour_names[[behav]])}. Properly copied files to test directory"))
+    } else {
+      stop("FAILING for {toupper(behaviour_names[[behav]])}. Not properly copying test files")
+    }
 
-  "and have to map this"
-  test_data_paths <- str_replace_all(sheeps_test_selected, c("complete" = "test"))
+    if (
+     test_validate <- dir_ls(
+        path = validate_data_paths[[behav]], 
+        type = 'file',
+        recurse = TRUE
+     ) %>% length != 0
+    ) {
+      print(str_glue("PASSING for {toupper(behaviour_names[[behav]])}. Properly copied files to validate directory"))
+    } else {
+      stop("FAILING for {toupper(behaviour_names[[behav]])}. Not properly copying validate files")
+    }
 
-
-
-
+    if (
+     test_train <- dir_ls(
+        path = train_data_paths[[behav]], 
+        type = 'file',
+        recurse = TRUE
+        ) %>% length != 0 
+    ) {
+      print(str_glue("PASSING for {toupper(behaviour_names[[behav]])}. Properly copied files to train directory"))
+    } else {
+      stop("FAILING for {toupper(behaviour_names[[behav]])}. Not properly copying train files")
+    }
+  }
+   
+  
 
 
 
