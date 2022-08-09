@@ -81,10 +81,10 @@ chop_data <- function(
   }
 
   # interactive target
-  # behaviours_key  <- c('A', 'B', 'C')#c('A', 'B', 'C', 'D', 'E', 'F')
-  # seconds_per_segment <- 5#c(5:1)
-  
-  # wrangled_full_data  <- tar_read(wrangled_full_data)
+   behaviours_key  <- c('A', 'B')#, 'C')#c('A', 'B', 'C', 'D', 'E', 'F')
+   seconds_per_segment <- 5#c(5:1)
+   wrangled_full_data  <- tar_read(wrangled_full_data)
+
   # behaviours_key = c('A', 'B', 'C', 'D', 'E', 'F'), 
  
 

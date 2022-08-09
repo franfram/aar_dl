@@ -75,11 +75,12 @@ tar_plan(
          #iteration = "list"
     ),
 
-    # splitted_data = split_train_validate_test(
-    #     # chopped_data? maybe return paths and use them?
-    #     validate_percentage = 0.2, 
-    #     test_percentage = 0.1
-    # )
+     splitted_data = split_train_validate_test(
+         validate_percentage = 0.2, 
+         test_percentage = 0.1, 
+         behaviours_key = c('A', 'B'), 
+         seconds_per_segment = 5
+     )
 
 
 
