@@ -7,7 +7,10 @@
 #'  find correlation bias in those segments and thus information leakage. 
 #'  So we need to select a random subset of segments from each sheep separately, but also 
 #'  making sure we have sheeps with all behaviours in train, validate, and test sets.
-#' 
+#'  
+#'  NOTES: theres a bug when using a 5:1 seconds_per_segment where behav
+#' takes the value of 3 instead of A, B, C. This only happens when using
+#' a vector and not when using an integer for seconds_per_segment 
 #' 
 #' } (no empty lines) ..
 #'
@@ -32,19 +35,19 @@ split_train_validate_test <- function(validate_percentage = 0.2,
 
 
   # Interactive stuff 
-  # behaviours_key <- c("A", "B")#, "C")
-  # seconds_per_segment <- 5
-
+  behaviours_key <- c('A', "B", "C")
+  seconds_per_segment <- 5
+  validate_percentage = 0.2
+  test_percentage = 0.1
 
   for (behav in behaviours_key){
     for (seconds in seconds_per_segment){
   
       path_directory <- here(
           "data", 
-          str_glue("python_complete_{behav}_{seconds_per_segment}s")
-        )
+          str_glue("python_complete_{behav}_{seconds}s")
+        ) %>% print
 
-      "this has to loop through seconds and behaviours"
       # Get list of all the files within the complete data directory 
       complete_data_paths <- dir_ls(
         path = path_directory, 
@@ -104,10 +107,6 @@ split_train_validate_test <- function(validate_percentage = 0.2,
 
       # Split those sheeps into train, validate, and test sets according to the
       # (approximate) percentages passed as arguments
-      ## Interactive stuff
-      "TO DELETE"
-      #validate_percentage = 0.2
-      #test_percentage = 0.1
 
       train_percentage = 1 - validate_percentage - test_percentage
 
