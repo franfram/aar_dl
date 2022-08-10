@@ -1,19 +1,24 @@
 #' .. content for \description{} (no empty lines) ..
 #' This function chops the wrangled data into segments of `segment_length` seconds that include
 #' the predefined 'behaviours'
+#'  
 #' 
+
+#' NOTES:
+#' The `Search` behaviour can't be classified due to lack of data (nrows of that behaviour smaller than 5s of data. )
+#' Same with `Shake` and `Scratch`
 #' .. content for \details{} ..
 #'
 #' @title Chop data into segments
 #' @param wrangled_full_data
 #' UPDATE WITH FOR LOOP CORRECTION
 #' @param behaviours_key pass a vector with the letters to indicate which behaviours to include.
-#'  options are A, B, C, D, E or F. 
+#'  options are A, B, or C. 
 #' @param seconds_per_segment pass an integer vector to indicate the length of the segments in seconds.
 #'  options are 5 to 1. 
 chop_data <- function(
   wrangled_full_data, 
-  behaviours_key = c("A", "B", "C", "D", "E", "F"),
+  behaviours_key = c("A", "B", "C"),
   seconds_per_segment = c(5, 4, 3, 2, 1)
 ) {
   
@@ -81,9 +86,9 @@ chop_data <- function(
   }
 
   # interactive target
-   behaviours_key  <- c('A', 'B')#, 'C')#c('A', 'B', 'C', 'D', 'E', 'F')
-   seconds_per_segment <- 5#c(5:1)
-   wrangled_full_data  <- tar_read(wrangled_full_data)
+  #  behaviours_key  <- c('A', 'B')#, 'C')#c('A', 'B', 'C', 'D', 'E', 'F')
+  #  seconds_per_segment <- 5#c(5:1)
+  #  wrangled_full_data  <- tar_read(wrangled_full_data)
 
   # behaviours_key = c('A', 'B', 'C', 'D', 'E', 'F'), 
  
