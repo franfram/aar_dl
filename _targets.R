@@ -68,19 +68,19 @@ tar_plan(
         chopped_data, 
         chop_data(
             wrangled_full_data = wrangled_full_data,
-            behaviours_key = ('A'),#, 'B', 'C'),  
-            seconds_per_segment = 5
+            behaviours_key = c('A', 'B', 'C'),  
+            seconds_per_segment = 5:1
         )#, 
          #pattern = cross(behav, seconds), 
          #iteration = "list"
     ),
 
-     splitted_data = split_train_validate_test(
-         validate_percentage = 0.2, 
-         test_percentage = 0.1, 
-         behaviours_key = c('A', 'B'), 
-         seconds_per_segment = 5
-     )
+    #  splitted_data = split_train_validate_test(
+    #      validate_percentage = 0.2, 
+    #      test_percentage = 0.1, 
+    #      behaviours_key = c('A', 'B', 'C'), 
+    #      seconds_per_segment = 5:1
+    #  )
 
 
 
