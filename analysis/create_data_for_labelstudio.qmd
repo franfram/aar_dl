@@ -1,0 +1,111 @@
+
+
+test 1 using preprocessed data (with R)
+```{python}
+import pandas as pd
+import numpy as np
+from datetime import datetime as dt
+
+df = pd.read_csv('../data/labelstudio/test6.csv')
+
+
+# Show df data
+print(df)
+
+# show a summary of df
+print(df.describe())
+
+# show column types of df
+print(df.dtypes)
+
+# Rename `time` column of df to `datetime`
+df.rename(columns={'time': 'datetime'}, inplace=True)
+
+df 
+# View the whole df data
+print(df.to_string())
+
+# Group by `datetime` and add another column indicating the index
+#df['datetime'] = pd.to_datetime(df['datetime'])
+
+
+# group by `datetime`
+#df_grouped = df.groupby('datetime')
+
+#print(df_grouped)
+
+# add new column with row number
+#df['row_number'] = df.index + 1
+
+print(df)
+
+
+
+Since you only have 40 sample in 1000 milliseconds you need to assign your values to every 1000/40 =25 miliseconds
+
+
+df['datetime']=df['datetime'].astype(str)+".00"
+
+df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H:%M:%S.%f')
+
+df['ms'] = df.groupby(df['datetime']).cumcount()
+df['ms'] = pd.to_timedelta(df['ms'], unit='us')
+df['ms']=df['ms']*25
+df['datetime']=df['datetime']+df['ms']
+
+# convert datetime to string using for loop
+    #df['datetime'][i] = df['datetime'][i].strftime('%Y-%m-%d %H:%M:%S.%f')
+
+# make a for loop with length of df printing i
+
+for idx in range(len(df)):
+    df['datetime'][idx] = df['datetime'].iloc[idx].strftime('%Y-%m-%d %H:%M:%S.%f')
+
+
+
+df = df.drop(['ms'], axis=1)
+
+now = dt.now()
+now
+dftest = df[0:2]
+
+dftest
+
+dftest['datetime'][0] = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+dftest['datetime'][1] = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+
+dftest
+
+print(df.to_string())
+print(df)
+print(df.dtypes)
+# write `df` as a csv
+dftest.to_csv('../data/labelstudio/test6_newNEW.csv', index=False)
+"THIS FKING WORKS, SO I SHOULD MAKE MY DATETIME JUST LIKE dt.now() AND IT WILL WORK"
+
+```
+
+
+
+test 2 using raw dec data
+```{python}
+import pandas as pd
+from datetime import datetime as dt
+# read csv data
+df2 = pd.read_csv('../data/dec/video1_ov11.csv')
+
+
+df2.describe()
+
+
+# show column types of df
+print(df2.dtypes)
+
+df2['TEST'] = pd.to_datetime(df2['DateTime'], infer_datetime_format=True)
+
+df2
+
+# select from df2 only column `TEST` and `Acc_x`
+
+
+```

@@ -1,0 +1,237 @@
+```{r}
+source('./packages.R')
+```
+
+
+We will first experiment with only 1 .csv to upload to labelstudio
+
+We will first read a single file and then try different outputs with different columns to classify. 
+```{r}
+paths <- list.files(here('data', 'dec'), full.names = TRUE) %>% print
+
+vars_to_keep <- c(
+    'file_name',
+    'Acc_x',
+    'Acc_y',
+    'Acc_z', 
+    'Mag_x',
+    'Mag_y',
+    'Mag_z',
+    'Pitch.angle', 
+    'Roll.angle', 
+    'DateTime', 
+    'Hours',
+    'Minutes',
+    'Seconds',
+    'Event.no.',
+    'Behaviours'
+)
+
+strip.tz <- function(dt) {
+  fmt <- "%Y-%m-%d %H:%M:%S"
+  strptime(strftime(dt, format = fmt, tz=""), format = fmt, tz="UTC")
+}
+
+
+
+clean_data <- function(x) {
+  x %>% 
+    read_csv(id = "file_name", col_types = cols()) %>% 
+    select(any_of(vars_to_keep)) 
+
+}
+
+label_studio_dfs <- paths %>% 
+    map(
+      read_csv, 
+      id = "file_name",
+      col_types = cols()
+    ) %>%
+    # Select columns to keep
+    map(
+      ~ select(
+        .x,
+        any_of(vars_to_keep)
+      )
+    ) %>% 
+    # Add sheep name column
+    map(
+      ~ add_column(
+          .x, 
+          sheep_name = str_extract(
+            .x$file_name,
+            "ov.."
+          )
+      )
+    ) %>% 
+    # Add sheep number column 
+    map(
+      ~ add_column(
+          .x, 
+          sheep_number = as.double(
+            str_extract(
+              .x$sheep_name,
+              "[0-9]+"
+            )
+          )
+      )
+    ) %>% 
+    # Add Year variable
+    map(
+      ~ mutate(
+          .x, 
+          year = year(DateTime)
+      )
+    ) %>% 
+    # Add Month variable
+    map(
+      ~ mutate(
+          .x, 
+          month = month(DateTime)
+      )
+    ) %>% 
+    # Add Day variable
+    map(
+      ~ mutate(
+          .x, 
+          day = day(DateTime)
+      )
+    ) %>%
+    # Remove DateTime var
+    map(
+      ~ select(
+          .x,
+          -'DateTime'
+      )
+    ) %>% 
+    # Rename all vars to lower-case names to avoid problems
+    map(
+      ~ rename_all(
+          .x, 
+          tolower
+      )
+    ) %>% 
+    # Some `second` variables are not numeric, so convert them 
+    map(
+      ~ mutate(
+        .x, 
+        seconds = as.double(seconds)
+      )
+    ) %>% 
+    # Add column indicating video name
+    map(
+      ~ mutate(
+          .x,
+          video_name = str_extract(
+            .x$file_name, 
+            pattern = "video.."
+          )
+      )
+    ) %>% 
+    # Add column indicating video number
+    map(
+      ~ mutate(
+          .x, 
+          video_number = as.double(
+            str_extract(
+              .x$video_name, 
+              pattern = "[0-9]+"
+            ) 
+          )  
+      )
+    ) %>% 
+    # Make proper date-time variable
+    map(
+        ~ mutate(
+            .x,
+            date_time = make_datetime(year, month, day, hours, minutes, seconds),
+          )
+    ) %>% 
+    map(
+       .f = ~ { mutate(
+            .x, 
+            date_time = strftime(date_time)
+        ) %>% as.data.frame
+       }
+    ) %>% 
+    map(
+        ~ select(.x, c(date_time, acc_x))
+    ) #%>% 
+    map(
+        ~ rename(.x, c('acc'= "acc_x", 'time'= "date_time"))
+    )  
+
+
+
+ 
+test <- label_studio_dfs[[1]]  %>% rename(c('acc'= "acc_x", 'time'= "date_time")) %>% as.data.frame
+test %>% colnames
+
+
+# test <- paths[[1]] %>% read_csv(id='file_name',col_types=cols()) %>% 
+#     %>% rename('acc'= "Acc_x", 'time'= "DateTime") %>% 
+#     select(time, acc) %>% 
+#     mutate(time=)
+
+# select("Acc_x", "DateTime")
+# 
+#https://stackoverflow.com/questions/44970127/remove-timezone-during-posixlt-conversion-in-r
+
+test <- as.POSIXlt(time, format = "%d-%m-%Y %H:%M:%S")
+
+time_test <- test$time
+
+time_test <- strftime(time_test) %>% as.data.frame()
+
+my_datetime <- as.POSIXlt("15-10-2017 16:41:00",format = "%d-%m-%Y %H:%M:%S")
+my_datetime$zone <- NULL
+my_datetime
+
+
+test %>% View 
+
+
+    mutate(
+      #hours_minutes_seconds = make_datetime(hours, minutes, seconds)
+      date_time = make_datetime(year, month, day, hours, minutes, seconds),
+      hms = as_hms(date_time)
+    )
+# write test csv
+test %>% write_csv(file=here('data', 'labelstudio', 'test6.csv'))
+```
+
+
+add milliseconds
+```{r}
+https://community.rstudio.com/t/convert-timestamp-by-milliseconds/22470/2
+```
+
+
+
+
+```{r}
+    vars_to_keep <- c(
+      'file_name',
+      'Acc_x',
+      'Acc_y',
+      'Acc_z', 
+      'Mag_x',
+      'Mag_y',
+      'Mag_z',
+      "Pitch.angle", 
+      "Roll.angle", 
+      'DateTime', 
+      'Hours',
+      'Minutes',
+      'Seconds',
+      'Event.no.',
+      'Behaviours'
+    )
+
+```
+
+
+
+```{python}
+
+```

@@ -14,7 +14,7 @@ read_and_clean_data <- function(
   ## stopifnot
 
   # Add if statement to generalize the function to both September and December files. 
-
+  "i believe this if statement should be deleted and vars_to_keep_ be just defined"
  if (month == "September") {
 
     vars_to_keep <- c(
