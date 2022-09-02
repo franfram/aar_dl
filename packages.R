@@ -11,6 +11,8 @@ library(paint)
 library(plotly)
 library(hms)
 library(fs)
+library(data.table)
+library(pak)
 
 ## Conflicted setup
 conflict_prefer("filter", "dplyr")

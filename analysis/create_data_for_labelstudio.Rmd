@@ -33,13 +33,32 @@ strip.tz <- function(dt) {
 }
 
 
+paths %>% map(clean_data)
 
+paths %>% map(
+  .f = ~ {
+
+  }
+)
+# Define function to clean data and prep it for labelstudio 
 clean_data <- function(x) {
   x %>% 
     read_csv(id = "file_name", col_types = cols()) %>% 
-    select(any_of(vars_to_keep)) 
+    select(any_of(vars_to_keep)) %>% 
+    add_column(sheep_name = str_extract(.x$file_name,"ov..")) %>% 
+    mutate(year = year(DateTime)) %>% 
+    mutate(month = month(DateTime)) %>% 
+    mutate(day = day(DateTime))
+    select(-'DateTime') %>% 
+    rename_all(tolower) %>% 
+    mutate(seconds = as.double(seconds)) # some second variables are not numeric
+    "there might appear a bug if other variables also are not numeric"
+    mutate(video_name = str_extract(.x$file_name, pattern = "video.."))
+
+
 
 }
+
 
 label_studio_dfs <- paths %>% 
     map(
@@ -156,7 +175,7 @@ label_studio_dfs <- paths %>%
     ) %>% 
     map(
         ~ select(.x, c(date_time, acc_x))
-    ) #%>% 
+    ) %>% 
     map(
         ~ rename(.x, c('acc'= "acc_x", 'time'= "date_time"))
     )  
@@ -164,7 +183,7 @@ label_studio_dfs <- paths %>%
 
 
  
-test <- label_studio_dfs[[1]]  %>% rename(c('acc'= "acc_x", 'time'= "date_time")) %>% as.data.frame
+test <- label_studio_dfs[[1]]  
 test %>% colnames
 
 

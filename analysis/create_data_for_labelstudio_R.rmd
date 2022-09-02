@@ -1,0 +1,73 @@
+
+
+
+```{r}
+
+source("./packages.R")
+library(data.table)
+
+# Get file paths
+paths  <- dir_ls(here('data', 'dec'))  
+
+# Get file names
+file_names <- map(path, basename)
+
+
+# Define how acc and datetime columns will be named in the final df
+var_names_acc <- str_c('acc_x_', file_names)
+var_names_dt <- str_c('datetime_', file_names)
+
+
+# Read data and select columns that will be merged at the end
+data <- paths %>% map(fread) %>% map(as_tibble) %>% 
+ map(~ select(.x, c('Acc_x', 'DateTime')))
+
+
+# are all date time equals?? we will leave the variables for each dataset just in case
+# Rename the variables
+for (file in seq_along(data)) {
+    data[[file]] <- data[[file]] %>% rename(!!var_names_acc[file] := 'Acc_x') %>% 
+    rename(!!var_names_dt[file] := 'DateTime')
+}
+
+
+
+data_merged = data %>% bind_cols
+
+
+
+data %>% map(nrow)
+
+data
+
+
+
+data[[1]]
+
+data[[1]]
+
+
+str_c('acc_x', file_names[[1]])
+
+
+data
+
+data[[1]] %>% as_tibble %>% select('Acc_x')
+
+
+data
+    .y = files,
+    .f = ~{
+        .x %>% fread %>% as_tibble %>% select('Acc_x', 'DateTime')  %>% 
+        rename(str_c('acc_x', .y) = 'Acc_x')
+    }
+)
+
+data
+
+dir_ls
+
+path[[1]]  %>% basename
+
+
+```

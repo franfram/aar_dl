@@ -1,4 +1,40 @@
 
+preprocess data using R
+```{r}
+source("./packages.R")
+
+paths  <- dir_ls(here('data', 'dec'))  
+file_names <- map(path, basename)
+
+library(data.table)
+
+data <- path %>% map(fread)
+
+data[[1]] %>% as_tibble %>% select('Acc_x')
+
+
+data <- list()
+for (file in seq_along(paths)) {
+    data[[file]] <- paths[file] %>% fread 
+}
+
+    .y = files,
+    .f = ~{
+        .x %>% fread %>% as_tibble %>% select('Acc_x')  %>% 
+        rename(str_c('acc_x', .y) = 'Acc_x')
+    }
+)
+
+data
+
+dir_ls
+
+path[[1]]  %>% basename
+```
+
+
+
+
 
 test 1 using preprocessed data (with R)
 ```{python}
@@ -49,7 +85,7 @@ df['datetime']=df['datetime'].astype(str)+".00"
 df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H:%M:%S.%f')
 
 df['ms'] = df.groupby(df['datetime']).cumcount()
-df['ms'] = pd.to_timedelta(df['ms'], unit='us')
+df['ms'] = pd.to_timedelta(df['ms'], unit='ms')
 df['ms']=df['ms']*25
 df['datetime']=df['datetime']+df['ms']
 
@@ -67,11 +103,16 @@ df = df.drop(['ms'], axis=1)
 
 now = dt.now()
 now
-dftest = df[0:2]
+dftest = df[0:100]
+
+dftest
+for idx in range(len(dftest)):
+    now = dt.now()
+    dftest['datetime'][idx] = now.strftime('%Y-%m-%d %H:%M:%S.%f')
 
 dftest
 
-dftest['datetime'][0] = now.strftime('%Y-%m-%d %H:%M:%S.%f')
+
 dftest['datetime'][1] = now.strftime('%Y-%m-%d %H:%M:%S.%f')
 
 dftest
@@ -80,32 +121,144 @@ print(df.to_string())
 print(df)
 print(df.dtypes)
 # write `df` as a csv
-dftest.to_csv('../data/labelstudio/test6_newNEW.csv', index=False)
+dftest.to_csv('../data/labelstudio/DFtest.csv', index=False)
 "THIS FKING WORKS, SO I SHOULD MAKE MY DATETIME JUST LIKE dt.now() AND IT WILL WORK"
+
+
+
+df['date'] = pd.to_datetime(df['date'])
+df['year'], df['month'] = df['date'].dt.year, df['date'].dt.month
+df
 
 ```
 
 
 
-test 2 using raw dec data
+test 2 using raw dec data. we have to create a proper datetime variable using datetime.datetime for proper parsing with D3 in labelstudio. 
+https://www.geeksforgeeks.org/create-a-pipeline-in-pandas/
 ```{python}
+import os
 import pandas as pd
 from datetime import datetime as dt
 # read csv data
-df2 = pd.read_csv('../data/dec/video1_ov11.csv')
+
+paths
+df = pd.read_csv('../data/dec/video1_ov11.csv')
 
 
-df2.describe()
+
+# drop prebuilt time columns
+df = df.drop(columns=['X','Hours','Minutes', 'Seconds'])
+
+# Build proper date and time columns
+df['DateTime'] = pd.to_datetime(df['DateTime'], infer_datetime_format=True)
+
+df['year'], df['month'], df['day'], df['hour'], df['minute'], df['second'] = df['DateTime'].dt.year, df['DateTime'].dt.month, df['DateTime'].dt.day, df['DateTime'].dt.hour, df['DateTime'].dt.minute, df['DateTime'].dt.second
+
+dtime = []
+for idx in range(len(df)):
+    temp = dt(df['year'][idx], df['month'][idx], df['day'][idx], df['hour'][idx], df['minute'][idx], df['second'][idx])
+    
+    dtime.append(temp)
 
 
-# show column types of df
-print(df2.dtypes)
+df['DateTime'] = dtime
 
-df2['TEST'] = pd.to_datetime(df2['DateTime'], infer_datetime_format=True)
+df['DateTime']=df['DateTime'].astype(str)+".00"
+df['DateTime'] = pd.to_datetime(df['DateTime'], format='%Y-%m-%d %H:%M:%S.%f')
+df['DateTime']=df['DateTime'].astype(str)+".00"
+df['DateTime'] = pd.to_datetime(df['DateTime'], format='%Y-%m-%d %H:%M:%S.%f')
+df['ms'] = df.groupby(df['DateTime']).cumcount()
+df['ms'] = pd.to_timedelta(df['ms'], unit='ms')
+df['ms']=df['ms']*25
+df['DateTime']=df['DateTime']+df['ms']
 
-df2
+df['DateTime']
 
-# select from df2 only column `TEST` and `Acc_x`
+df = df[['Acc_x', 'DateTime']]
+df = df.rename(columns={'Acc_x':'acc'})
+#df.dtypes 
+#df.to_csv('../data/labelstudio/dfMustWork2.csv', index=False)
 
 
+```
+
+
+
+
+
+make the goddam functions
+```{python}
+from os import listdir
+import pandas as pd
+from datetime import datetime as dt
+# read csv data
+
+path = '../data/dec/'
+path2 = '../'
+df = pd.read_csv('../data/dec/video1_ov11.csv')
+
+def get_paths(upperDir):
+    return [f for f in listdir(upperDir)]
+
+
+
+import os
+
+def absoluteFilePaths(directory):
+    for dirpath,_,filenames in os.walk(directory):
+        for f in filenames:
+            yield os.path.abspath(os.path.join(dirpath, f))
+
+absoluteFilePaths()
+
+
+
+test = get_paths(path)
+
+test
+
+test.apply(read_csv)
+
+for f in csv_files:
+      
+    # read the csv file
+    df = pd.read_csv(f)
+      
+    # print the location and filename
+    print('Location:', f)
+    print('File Name:', f.split("\\")[-1])
+      
+    # print the content
+    print('Content:')
+    display(df)
+    print()
+test.dtypes
+```
+
+
+
+test 3 using raw dec data
+```{python}
+import pandas as pd
+import numpy as np
+from datetime import datetime as dt
+
+df = pd.read_csv('../data/labelstudio/test6.csv')
+
+df.rename(columns={'time': 'datetime'}, inplace=True)
+
+
+df['datetime']=df['datetime'].astype(str)+".00"
+df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H:%M:%S.%f')
+df['datetime']=df['datetime'].astype(str)+".00"
+df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d %H:%M:%S.%f')
+df['ms'] = df.groupby(df['datetime']).cumcount()
+df['ms'] = pd.to_timedelta(df['ms'], unit='ms')
+df['ms']=df['ms']*25
+df['datetime']=df['datetime']+df['ms']
+df = df.drop(['ms'], axis = 1)
+
+
+df.to_csv('../data/labelstudio/RETEST.csv', index=False)
 ```
