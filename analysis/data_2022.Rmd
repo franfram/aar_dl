@@ -1,0 +1,98 @@
+```{r}
+renv::activate()
+source("./packages.R")
+```
+
+We will merge all the data from 2022. 
+For that, first we will check the directories
+
+```{r}
+library(fs)
+library(here)
+library(data.table)
+
+
+dirs <- dir_ls(here(c("data/datos2022")))
+dirs
+```
+
+Now we are going to get the list of files of each dir. 
+```{r}
+files <- dirs %>% map(dir_ls, glob = "*collar*")
+files
+
+```
+
+
+Now we are going to read and merge all these files into a single tibble for labelling
+
+ ```{r}
+## Read text file with readr
+
+
+.x <- files[[1]][[1]]
+.x
+
+vars <- c("Pitch angle", "Time_dd:hh:mm:ss.sss", "Decimal secs")
+
+
+data_raw <- list()
+for (i in seq_along(dirs)){
+    for (j in seq_along(files[[i]])){
+        data_raw[i][[j]] <-  files[[i]][[j]] %>% fread(select = vars) %>% as.data.frame 
+        print(j)
+    }
+}
+
+
+
+
+data_raw %>% str
+
+
+for (i in seq_along(files)){
+    glimpse(data_raw[[1]][[i]])
+}
+
+glimpse(data_raw)
+
+data_raw[[1]] %>% glimpse
+
+
+map(files[[1]], .f = ~ {fread(.x, select = vars) %>% as.data.frame}
+
+
+
+test <- read.table(.x, sep = "\t", header = TRUE)
+
+test <- read_tsv(.x, sep = "\t", header = TRUE)
+
+map(files[[1]], ~ read.table(.x, sep = "\t", header = TRUE))
+
+
+
+
+
+
+
+data_raw <- list()
+for (dir in seq_along(dirs)){
+    map(files[[dir]], ~ read.table(.x, sep = "\t", header = TRUE))
+}
+
+
+data_raw <- list()
+for (dir in seq_along(dirs)) {
+    for (file in seq_along(files)) {
+        data_raw[dir][[file]] <- files[[dir]][[file]] %>% read.table(sep = "\t", header = TRUE)       
+    }
+} 
+
+
+data_raw %>% glimpse
+
+
+
+.x
+
+```
