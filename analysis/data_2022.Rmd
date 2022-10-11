@@ -25,7 +25,91 @@ files
 
 
 Now we are going to read and merge all these files into a single tibble for labelling
+Each folder contains data from a single sheep, which is splitted into various data files
 
+```{r}
+files1 <- as.list(files[[1]])
+files1
+
+map(files1, .f = ~{fread(.x, select=vars)})
+
+data <- list()
+for (sheep in seq_along(files)) {
+   data[[sheep]] <-  as.list(files[[sheep]]) %>% map(.f = ~{fread(.x, select=vars) %>% as_tibble}) %>% bind_rows()
+}
+
+
+
+
+```
+
+
+
+```{r}
+
+vars <- c("Pitch angle", "Time_dd:hh:mm:ss.sss", "Decimal secs")
+vars_1 <- c("Pitch angle")
+data_raw <- list()
+data <- list()
+
+for (i in seq_along(dirs)){
+    for (j in seq_along(files[[i]])){
+        data_raw[i][[j]] <-  files[[i]][[j]] %>% fread(select = vars) %>% as.data.frame  %>% as_tibble
+        
+    }
+    #`data[[i]] <- bind_rows()
+}
+
+
+data1 <- files[[1]][[2]] %>% fread(select = vars) %>% as.data.frame  %>% as_tibble
+
+
+map(files[[1]]as.as.list())
+
+# this is for when merging inter sheep files, not intra sheep, for intrasheep we need bindrows
+data_raw_t <- files[[1]][[1]] %>% fread(select = vars) %>% as.data.frame  %>% as_tibble %>% dplyr::rename('Pitch_angle_1' = 'Pitch angle')
+data_raw_t1 <- files[[1]][[2]] %>% fread(select = vars_1) %>% as.data.frame  %>% as_tibble %>% dplyr::rename('Pitch_angle_2' = 'Pitch angle')
+
+
+.x  <- data_raw[1][[1]]
+.y  <- data_raw[1][[2]] %>% select('Pitch angle')
+temp = bind_columns(.x, .y)
+for (j in seq_along(files[[1]])) {
+    temp = bind_cols(data_raw[[1]][[j]], data_raw[[1]][[j+1])
+    data = 
+}
+
+
+.x  <- data_raw[1][[1]]
+.y  <- data_raw[1][[1]]
+
+str(data_raw[1])
+test3 <- dplyr::bind_rows(data_raw[1], .id = 'Pitch angle')
+
+
+
+glimpse(test3)
+
+test <- bind_cols(.x, .y)
+
+test2 <- reduce(data_raw[1], bind_cols)
+
+test4 <- bind_cols(data_raw[[1]])
+
+test4  %>% glimpse
+
+data_raw[[1]][[1]] %>% glimpse
+
+test2 %>% glimpse
+
+test %>% glimpse
+
+
+qplot(data_raw[[1]][[1]])
+
+
+
+```
  ```{r}
 ## Read text file with readr
 
