@@ -7,11 +7,7 @@ We will merge all the data from 2022.
 For that, first we will check the directories
 
 ```{r}
-library(fs)
-library(here)
-library(data.table)
-
-
+library(hms)
 dirs <- dir_ls(here(c("data/datos2022")))
 dirs
 ```
@@ -27,16 +23,123 @@ files
 Now we are going to read and merge all these files into a single tibble for labelling
 Each folder contains data from a single sheep, which is splitted into various data files
 
+We have to make a proper datetime variable for an inter sheep merge. 
+
 ```{r}
+library(chron)
 files1 <- as.list(files[[1]])
 files1
 
-map(files1, .f = ~{fread(.x, select=vars)})
 
-data <- list()
-for (sheep in seq_along(files)) {
-   data[[sheep]] <-  as.list(files[[sheep]]) %>% map(.f = ~{fread(.x, select=vars) %>% as_tibble}) %>% bind_rows()
-}
+# data <- list()
+# for (sheep in seq_along(files)) {
+#    data[[sheep]] <-  as.list(files[[sheep]]) %>% map(.f = ~{fread(.x ) %>% as_tibble}) %>% bind_rows()
+# }
+
+
+vars <- c("Pitch angle", "Time_dd:hh:mm:ss.sss", "Decimal secs", "Date")
+
+data <-  as.list(files1) %>% map(.f = ~{fread(.x, select=vars) %>% as_tibble}) %>% bind_rows() %>% 
+    rename(hms_time=`Time_dd:hh:mm:ss.sss`) %>% mutate(Date = lubridate::dmy(Date))  %>% 
+    mutate(hms_time=as.POSIXct(data$hms_time, format="%H:%M:%S"))  %>% 
+    mutate(hour=lubridate::hour(hms_time)) %>% 
+    mutate(minute=lubridate::minute(hms_time)) %>% 
+    mutate(second=lubridate::second(hms_time)) %>% 
+    select(-hms_time) %>% 
+    mutate(year=lubridate::year(Date)) %>% 
+    mutate(month=lubridate::month(Date)) %>% 
+    mutate(day=lubridate::day(Date))
+
+
+data
+
+data2 <- data  %>% 
+    mutate(hms_time=as.POSIXct(data$hms_time, format="%H:%M:%S")) 
+    
+    
+data3 <- data2 %>% 
+    mutate(hour=lubridate::hour(hms_time)) %>% 
+    mutate(minute=lubridate::minute(hms_time)) %>% 
+    mutate(second=lubridate::second(hms_time)) %>% 
+    select(-hms_time) 
+    
+data4 <- data3 %>% 
+    mutate(year=lubridate::year(Date)) %>% 
+    mutate(month=lubridate::month(Date)) %>% 
+    mutate(day=lubridate::day(Date))
+
+
+data4
+
+
+data_head <- head(data)
+data_head
+
+data %>% glimpse
+
+data$hms <- chron(times=data$hms)
+
+lubridate::hour(data_head$hms)
+
+
+
+data_head
+
+test <- as.POSIXct(data_head$hms,format="%H:%M:%S")
+
+lubridate::hour(test)
+
+
+hms %>% str
+
+
+
+data  %>% glimpse
+ymd(data$Date)
+
+hms <- data_head$hms
+
+hms
+
+
+
+lubridate::hour(hms)
+test <- as.POSIXct(hms,origin="1970-01-01")
+test
+
+
+library(chron)
+x <- chron(times=hms)
+x
+
+data_head <- head(data)
+data_head <- data_head %>% mutate(Date = dmy(Date))
+data_head
+lubridate::year(data_head$Date)
+make_datetime(
+    lubridate::year(data_head$Date), 
+    lubridate::month(data_head$Date), 
+    lubridate::day(data_head$Date), 
+    lubridate::hour(data_head$hms), 
+    lubridate::minute(data_head$hms), 
+    lubridate::hour(data_head$hms)
+)
+
+
+lubridate::day(data_head$Date)
+hms::hms(as.character(as.numeric((data_head$`Time_dd:hh:mm:ss.sss`)))
+
+
+data_head_date <- data_head$Date
+dmy(data_head_date)
+
+colnames(data[[1]])
+
+bind_cols(data)
+test <- map2(data[[1]], data[[2]], left_join)
+
+
+## for merging  https://stackoverflow.com/questions/5965698/merge-unequal-dataframes-and-replace-missing-rows-with-0
 
 
 
@@ -45,9 +148,10 @@ for (sheep in seq_along(files)) {
 
 
 
+
 ```{r}
 
-vars <- c("Pitch angle", "Time_dd:hh:mm:ss.sss", "Decimal secs")
+vars <- c("Pitch angle", "Time_dd:hh:mm:ss.sss", "Decimal secs", "Date")
 vars_1 <- c("Pitch angle")
 data_raw <- list()
 data <- list()
