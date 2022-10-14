@@ -39,7 +39,7 @@ files1
 
 vars <- c("Pitch angle", "Time_dd:hh:mm:ss.sss", "Decimal secs", "Date")
 
-data <-  as.list(files1) %>% map(.f = ~{fread(.x, select=vars) %>% as_tibble}) %>% bind_rows() %>% 
+data <-  as.list(files1) %>% map(.f = ~{fread(.x, select=vars) %>% as_tibble}) %>% bind_rows() #%>% 
     rename(hms_time=`Time_dd:hh:mm:ss.sss`) %>% mutate(Date = lubridate::dmy(Date))  %>% 
     mutate(hms_time=as.POSIXct(data$hms_time, format="%H:%M:%S"))  %>% 
     mutate(hour=lubridate::hour(hms_time)) %>% 
@@ -51,10 +51,12 @@ data <-  as.list(files1) %>% map(.f = ~{fread(.x, select=vars) %>% as_tibble}) %
     mutate(day=lubridate::day(Date))
 
 
+
+
 data
 
 data2 <- data  %>% 
-    mutate(hms_time=as.POSIXct(data$hms_time, format="%H:%M:%S")) 
+    mutate(hms_time = as.POSIXct(data$hms_time, format="%H:%M:%S")) 
     
     
 data3 <- data2 %>% 
