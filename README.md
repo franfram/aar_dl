@@ -1,5 +1,2 @@
 # AAR-DL
-
-A [workflowr][] project.
-
-[workflowr]: https://github.com/workflowr/workflowr
+A research project to decode sheep movement data
