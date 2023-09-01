@@ -4,6 +4,10 @@ output: html_document
 bibliography: references.bib
 ---
 
+Update August 23 of 2023: We will use this rmd to get a clean dataset to use as the RAW dataset in the paper and maybe upload it to some data bank. The rest of the data wrangling (e.g., chopping data into 5s
+segments and prepping for image building will be done in python)
+
+
 
 
 vedba y odba son solo distintas formas de sumar los ejes de los acelerometros\ 
@@ -83,7 +87,7 @@ library(fs)
 library(here)
 library(lubridate)
 library(reactable)
-library(paint)
+#library(paint)
 library(hms)
 
 ```
@@ -166,7 +170,7 @@ raw_sep[[1]] %>%
 
 ```
 
-Whereas december files have different amount of cols
+Whereas December files have different amount of cols
 
 
 ```{r}
@@ -198,9 +202,7 @@ map_dfc(raw_dic, ncol) %>%
 ncol(raw_dic[[37]])
 
 
-
-# hacer algo con tally o count para ver cuantos files tienen cuantas columnas
-# map(raw_dic, ncol)
+# add a tally or count line to see how many files contain X amount of columns
 ```
 
 which seems to be due to some files lacking some variables (those with less than 27 columns), but there's a particular file having 28 columns (video2_ov9).
@@ -359,7 +361,7 @@ raw_data_sep <- sep_paths %>%
   map(
     ~ select(
       .x,
-      vars_to_keep_sep
+      all_of(vars_to_keep_sep)
     )
   ) %>% 
   # Add sheep name column
@@ -461,7 +463,7 @@ raw_data_dic <- dic_paths %>%
   map(
     ~ select(
       .x,
-      vars_to_keep_dic
+      all_of(vars_to_keep_dic)
     )
   ) %>% 
   # Add sheep name column
@@ -573,21 +575,12 @@ reactable(raw_data_sep)
 -   December data
 
 
-
-
-```{r}
-
-
-
-
-```
-
-
 ```{r}
 
 reactable(raw_data_dic)
 
 ```
+
 
 Now we will merge both datasets, and check which columns contain NAs
 
@@ -610,7 +603,12 @@ nas / nrow(clean_data) * 100
 
 ```
 
-DESCRIBE BEHAVIOURS
+Behaviour description: 
+Recorded behaviours are Walk, Fast Walk, Vigilance, Eating, Vigilance, Scratch, and Shake. There are some other
+behaviours which are just modifications of others. E.g. `Vigilance.down` is the same as `Vigilance` but when the
+sheep is laying on the ground, and `Eating.up` is the same as `Eating` but instead of eating grass, the sheep is eating from a mid-height schrub. 
+
+
 
 ```{r}
 unique(clean_data$behaviours)

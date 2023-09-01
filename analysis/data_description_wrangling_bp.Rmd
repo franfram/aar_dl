@@ -4,6 +4,7 @@ output: html_document
 bibliography: references.bib
 ---
 
+THIS IS THE LAST ONE
 
 
 vedba y odba son solo distintas formas de sumar los ejes de los acelerometros\ 
@@ -83,7 +84,7 @@ library(fs)
 library(here)
 library(lubridate)
 library(reactable)
-library(paint)
+#library(paint)
 library(hms)
 
 ```
@@ -99,7 +100,7 @@ conflict_prefer("year", "lubridate")
 
 Data came as .csv files. The original repo had two folders for data: "sep" and\
 "dic", not sure why nor which files where on each folder (may be able to know\
-this later). We'll suppouse those files starting with "sep" where those on the\
+this later). We'll suppousse those files starting with "sep" where those on the\
 "sep" folder and those starting with "video" where those on the "dic" folder.\
 (and that's how I organized the files on this repo).
 
@@ -110,14 +111,14 @@ acceleration data was not available, a total of 18 videos from eight different\
 animals were obtained from the session of September and a total of 49 videos\
 from 17 different animals from the session of December."
 
-Files are named indicating number of video (e.g., 'video10' for the 10th video) and sheep number (e.g. ov18 for then 18th sheep)
+Files are named indicating number of video (e.g., 'video10' for the 10th video) and sheep number (e.g. ov18 for the 18th sheep)
 
 ```{r list files}
 
 ## get paths of files
 sep_paths <- dir_ls(path = here("data", "sep"), glob = "*.csv") %>% 
   print()
-dic_paths <- dir_ls(path = here("data", "dic"), glob = "*.csv") %>% 
+dic_paths <- dir_ls(path = here("data", "dec"), glob = "*.csv") %>% 
   print()
 
 ```
@@ -307,7 +308,7 @@ vars_to_keep_sep <- c(
 )
 
 
-vars_to_keep_dic <- c(
+vars_to_keep_dec <- c(
   'file_name_original',
   'Acc_x',
   'Acc_y',
@@ -327,14 +328,14 @@ vars_to_keep_dic <- c(
   # 'Roll.smoothed.angle'
 )
 
-vars_to_keep_dic2 <- c(
+vars_to_keep_dec2 <- c(
   'file_name_original',
   'Acc_x',
   'Acc_y',
   'Acc_z', 
-  # 'Mag_x',
-  # 'Mag_y',
-  # 'Mag_z',
+  'Mag_x',
+  'Mag_y',
+  'Mag_z',
   'DateTime', 
   'Hours',
   'Minutes',
@@ -346,6 +347,7 @@ vars_to_keep_dic2 <- c(
   # 'Roll angle' 
   # 'Roll.smoothed.angle'
 )
+
 ########## probably should use purrr::when 
 # Wrangle September files
 raw_data_sep <- sep_paths %>% 
@@ -442,14 +444,19 @@ raw_data_sep <- sep_paths %>%
     )
   ) %>% 
   # Bind rows to form a single tibble
-  bind_rows %>% 
+  bind_rows %>%
+  
   suppressMessages
   
 
 
 # Wrangle December files
 ## December files have some problems where a few variables don't have consistent classes
-## across files. We will have to add a few steps to correct this. 
+## across files. We will have to add a few steps to correct this. # Maybe a `for loop` is better when dealing with
+# the missing variables in each df
+
+# UPDATE: Added try() statements in order to skip the failing dataframes (those without magnetometer data). So now we can select both `vars_to_keep_dec`(without mag data) and `vars_to_keep_dec2`(with mag data)
+
 raw_data_dic <- dic_paths %>% 
   # Read files
   map(
@@ -459,24 +466,24 @@ raw_data_dic <- dic_paths %>%
   ) %>%
   # Select columns to keep
   map(
-    ~ select(
+    ~ try(select(
       .x,
-      vars_to_keep_dic
-    )
+      vars_to_keep_dec2
+    ), silent = TRUE)
   ) %>% 
   # Add sheep name column
   map(
-    ~ add_column(
+    ~ try(add_column(
         .x, 
         sheep_name = str_extract(
           .x$file_name_original,
           "ov.."
         )
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add sheep number column 
   map(
-    ~ add_column(
+    ~ try(add_column(
         .x, 
         sheep_number = as.double(
           str_extract(
@@ -484,64 +491,64 @@ raw_data_dic <- dic_paths %>%
             "[0-9]+"
           )
         )
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add Year variable
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         year = year(DateTime)
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add Month variable
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         month = month(DateTime)
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add Day variable
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         day = day(DateTime)
-    )
+    ), silent = TRUE)
   ) %>%
   # Remove DateTime var
   map(
-    ~ select(
+    ~ try(select(
         .x,
         -'DateTime'
-    )
+    ), silent = TRUE)
   ) %>% 
   # Rename all vars to lower-case names to avoid problems
   map(
-    ~ rename_all(
+    ~ try(rename_all(
         .x, 
         tolower
-    )
+    ), silent = TRUE)
   ) %>% 
   # Coerce to consistent classes
   map(
-    ~ mutate_at(
+    ~ try(mutate_at(
         .x,
         c('hours', 'minutes', 'seconds'),
         as.double
-      ) 
+      ), silent = TRUE)
   ) %>%  
   # Add column indicating video name
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x,
         video_name = str_extract(
           .x$file_name_original, 
           pattern = "video.."
         )
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add column indicating video number
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         video_number = as.double(
           str_extract(
@@ -549,8 +556,10 @@ raw_data_dic <- dic_paths %>%
             pattern = "[0-9]+"
           ) 
         )
-    )
-  ) %>% 
+    ), silent = TRUE)
+  ) %>%
+  # Catch the errors
+  map(~ if (inherits(.x, "try-error")) NULL else .x) %>% 
   # Bind rows to form a single tibble
   bind_rows %>% 
   suppressMessages
@@ -560,10 +569,12 @@ raw_data_dic <- dic_paths %>%
 
 ```
 
+
+
+
 Now we have the datasets cleaned:
 
 -   September data
-
 ```{r}
 reactable(raw_data_sep)
 
@@ -571,18 +582,6 @@ reactable(raw_data_sep)
 ```
 
 -   December data
-
-
-
-
-```{r}
-
-
-
-
-```
-
-
 ```{r}
 
 reactable(raw_data_dic)
@@ -610,7 +609,11 @@ nas / nrow(clean_data) * 100
 
 ```
 
-DESCRIBE BEHAVIOURS
+Behaviour description: 
+Recorded behaviours are Walk, Fast Walk, Vigilance, Eating, Vigilance, Scratch, and Shake. There are some other
+behaviours which are just modifications of others. E.g. `Vigilance.down` is the same as `Vigilance` but when the
+sheep is laying on the ground, and `Eating.up` is the same as `Eating` but instead of eating grass, the sheep is eating from a mid-height schrub. 
+
 
 ```{r}
 unique(clean_data$behaviours)
@@ -676,18 +679,12 @@ clean_data <- clean_data %>%
     )
   )
   
-  
-  
-
-
-
 ```
 
 We will also make a properly created date-time variable for making some plots\
 later.
 
 ```{r}
-
 clean_data <- clean_data %>% 
   mutate(
     #hours_minutes_seconds = make_datetime(hours, minutes, seconds)

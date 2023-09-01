@@ -5,7 +5,7 @@
 .Rapp.history
 .DS_Store
 *jpg
-*png
+
 *csv
 analysis/figure
 analysis/*png
