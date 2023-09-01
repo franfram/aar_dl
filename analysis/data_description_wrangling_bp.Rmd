@@ -292,9 +292,9 @@ vars_to_keep_sep <- c(
   'Acc_x',
   'Acc_y',
   'Acc_z', 
-  # 'Mag_x',
-  # 'Mag_y',
-  # 'Mag_z',
+  'Mag_x',
+  'Mag_y',
+  'Mag_z',
   'DateTime', 
   'Hours',
   'Minutes',
@@ -303,7 +303,7 @@ vars_to_keep_sep <- c(
   'Behaviours'#,
   # 'Pitch.angle',
   # 'Pitch.smoothed.angle',
-  # 'Roll.angle' 
+  # 'Roll.angle'
   # 'Roll.smoothed.angle' 
 )
 
@@ -344,7 +344,7 @@ vars_to_keep_dec2 <- c(
   'Behaviours'#,
   # 'Pitch angle',
   # 'Pitch.smoothed.angle',
-  # 'Roll angle' 
+  # 'Roll angle'
   # 'Roll.smoothed.angle'
 )
 
@@ -359,24 +359,24 @@ raw_data_sep <- sep_paths %>%
   ) %>%
   # Select columns to keep
   map(
-    ~ select(
+    ~ try(select(
       .x,
       vars_to_keep_sep
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add sheep name column
   map(
-    ~ add_column(
+    ~ try(add_column(
         .x, 
         sheep_name = str_extract(
           .x$file_name_original,
           "ov.."
         )
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add sheep number column 
   map(
-    ~ add_column(
+    ~ try(add_column(
         .x, 
         sheep_number = as.double(
           str_extract(
@@ -384,56 +384,56 @@ raw_data_sep <- sep_paths %>%
             "[0-9]+"
           )
         )
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add Year variable
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         year = year(DateTime)
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add Month variable
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         month = month(DateTime)
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add Day variable
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         day = day(DateTime)
-    )
+    ), silent = TRUE)
   ) %>%
   # Remove DateTime var
   map(
-    ~ select(
+    ~ try(select(
         .x,
         -'DateTime'
-    )
+    ), silent = TRUE)
   ) %>% 
   # Rename all vars to lower-case names to avoid problems
   map(
-    ~ rename_all(
+    ~ try(rename_all(
         .x, 
         tolower
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add column indicating video name
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x,
         video_name = str_extract(
           .x$file_name_original, 
           pattern = "video.."
         )
-    )
+    ), silent = TRUE)
   ) %>% 
   # Add column indicating video number
   map(
-    ~ mutate(
+    ~ try(mutate(
         .x, 
         video_number = as.double(
           str_extract(
@@ -441,11 +441,10 @@ raw_data_sep <- sep_paths %>%
             pattern = "[0-9]+"
           ) 
         )  
-    )
+    ), silent = TRUE)
   ) %>% 
   # Bind rows to form a single tibble
   bind_rows %>%
-  
   suppressMessages
   
 
@@ -468,9 +467,24 @@ raw_data_dic <- dic_paths %>%
   map(
     ~ try(select(
       .x,
-      vars_to_keep_dec2
+      all_of(vars_to_keep_dec2)
     ), silent = TRUE)
-  ) %>% 
+  ) %>%  
+  
+  # Use this if you want to include Pitch Angle and Roll Angle, but you'll have the problem of about 90% of NAs in those variables
+  # map(
+  #   ~ { 
+  #     cols_to_select <- ifelse(
+  #       all(c("Pitch angle", "Roll angle") %in% names(.x)),
+  #       c("Pitch angle", "Roll angle"),
+  #       c("Pitch.angle", "Roll.angle")
+  #     )
+  #     try(select(
+  #     .x,
+  #     c(vars_to_keep_dec2, cols_to_select)
+  #   ), silent = TRUE)
+  #   }
+  # ) %>% 
   # Add sheep name column
   map(
     ~ try(add_column(
@@ -591,14 +605,11 @@ reactable(raw_data_dic)
 Now we will merge both datasets, and check which columns contain NAs
 
 ```{r}
-
-
 clean_data <- bind_rows(
   raw_data_dic, 
   raw_data_sep
 ) 
  
-
 
 print("Amount of NAs in each column")
 nas <- colSums(is.na(clean_data)) %>% print()
@@ -609,16 +620,7 @@ nas / nrow(clean_data) * 100
 
 ```
 
-Behaviour description: 
-Recorded behaviours are Walk, Fast Walk, Vigilance, Eating, Vigilance, Scratch, and Shake. There are some other
-behaviours which are just modifications of others. E.g. `Vigilance.down` is the same as `Vigilance` but when the
-sheep is laying on the ground, and `Eating.up` is the same as `Eating` but instead of eating grass, the sheep is eating from a mid-height schrub. 
 
-
-```{r}
-unique(clean_data$behaviours)
-
-```
 
 We can see that only the 'behaviours' column contain NAs and they amount to\
 about 5% of the entries.
@@ -627,6 +629,7 @@ We will remove this NAs for the time being, but we will check this again later.\
 We will also change the order of the columns and arrange the dataset.
 
 ```{r}
+
 clean_data <- clean_data %>% 
   # Remove rows containing NAs
   drop_na %>% 
@@ -644,6 +647,9 @@ clean_data <- clean_data %>%
     'acc_x', 
     'acc_y',
     'acc_z', 
+    'mag_x', 
+    'mag_y',
+    'mag_z', 
     'behaviours',
     'video_name', 
     'video_number',
@@ -696,6 +702,10 @@ clean_data <- clean_data %>%
 
 We will check if in fact there's 40 records per second, as the Daily Diaries\
 are supposed to work.
+
+UPDATE: Maybe this whole problem of cases with more or less that 40 records per second just arises because of the division of a second by 40 to get the 40Hz. Because 60/40 = 1.5, if the Daily Diary has some delay in the recording or the recording doesn't start at time 00:00:00, then the last Hz of the 40Hz can end up in the next second or the first Hz of the 40Hz can end up in the previous second, thus why we have so many cases of 39 or 41 records per second.
+Maybe we can just ignore this problem until we have to do inference? At inference time we may have some problems determining
+to which second a classified image belongs. 
 
 ```{r}
 
@@ -884,8 +894,8 @@ will be useful for storing the segments and we will also remove a few variables\
 that we won't need for building the images.
 
 ```{r}
-library(targets)
-clean_data <- tar_read(wrangled_full_data)
+# library(targets)
+# clean_data <- tar_read(wrangled_full_data)
 
 
 # add variable that assigns a number to each behaviour
@@ -920,8 +930,8 @@ clean_data  <- clean_data %>%
     'mag_x', 
     'mag_y',
     'mag_z', 
-    'pitch.angle', 
-    'roll.angle', 
+    # 'pitch.angle', 
+    # 'roll.angle', 
     'behaviours',
     'behaviours_n'
   ) 
@@ -962,16 +972,57 @@ percentage_of_behaviours <- count(clean_data, behaviours) %>%
 
 
 # map a function that will keep the first n behaviours, with n = c(3:8)
-behaviours_to_keep <- 3:8  %>% 
-  map(
-    .f = ~ {
-      percentage_of_behaviours %>% 
-        head(.x) %>% 
-        pull(behaviours)
-    } 
-  )
- 
+# behaviours_to_keep <- 3:8  %>% 
+#   map(
+#     .f = ~ {
+#       percentage_of_behaviours %>% 
+#         head(.x) %>% 
+#         pull(behaviours)
+#     } 
+#   )
 
+
+k = 3 # amount of most occuring behavours to keep
+behaviours_to_keep <- percentage_of_behaviours %>% 
+  head(k) %>% 
+  pull(behaviours)
+  
+  
+
+ 
+print(behaviours_to_keep)
+
+
+
+```
+
+
+
+
+```{r}
+
+merge_behaviours_as_other <- function(behaviour_datasets, keep_behaviours) {
+  # Filter out datasets that are to be kept as is
+  datasets_to_keep <- purrr::map_lgl(behaviour_datasets, ~unique(.x$behaviours) %in% keep_behaviours)
+  
+  # Actual datasets to keep
+  keep_datasets <- behaviour_datasets[datasets_to_keep]
+  
+  # Datasets to be modified
+  modify_datasets <- behaviour_datasets[!datasets_to_keep]
+  
+  # Modify 'behaviours' column to 'other'
+  modify_datasets <- purrr::map(modify_datasets, ~mutate(.x, behaviours = 'other'))
+  
+  # Combine all the datasets
+  combined_data <- dplyr::bind_rows(modify_datasets)
+  
+  return(combined_data)
+}
+
+# Example usage
+keep_behaviours <- c("eating", "resting", "vigilance")
+new_dataset <- merge_behaviours_as_other(behaviour_datasets, keep_behaviours)
 
 
 ```
@@ -991,6 +1042,16 @@ for (i in 1:length(behaviours_to_keep)) {
  
 
 ```
+
+
+```{r}
+kept_behaviours
+
+
+```
+
+
+
 
 Now it's time to chop the remaining datasets into 5 second segments. For that,\
 we will define a custom "chopping" function.
@@ -1346,8 +1407,17 @@ for (let in seq_along(c('A'))){#seq_along(letter)) {
 
 ```
 
-DESCRIPTION OF BEHAVIOURS.
 
+Behaviour description: 
+Recorded behaviours are Walk, Fast Walk, Vigilance, Eating, Vigilance, Scratch, and Shake. There are some other
+behaviours which are just modifications of others. E.g. `Vigilance.down` is the same as `Vigilance` but when the
+sheep is laying on the ground, and `Eating.up` is the same as `Eating` but instead of eating grass, the sheep is eating from a mid-height schrub. 
+
+
+```{r}
+unique(clean_data$behaviours)
+
+```
 
 
 
