@@ -1,0 +1,331 @@
+---
+title: "sheep_data_wrangling.rmd"
+output: html_document
+date: "2023-09-07"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(here)
+library(fs)
+
+```
+
+
+```{r}
+## get paths of files
+sep_paths <- dir_ls(path = here("data", "sep"), glob = "*.csv") %>% 
+  print()
+dic_paths <- dir_ls(path = here("data", "dec"), glob = "*.csv") %>% 
+  print()
+
+```
+
+
+
+
+
+
+```{r wrangle data}
+
+# Modify variables to keep as needed
+vars_to_keep_sep <- c(
+  'file_name_original',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  'Mag_x',
+  'Mag_y',
+  'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'#,
+  # 'Pitch.angle',
+  # 'Pitch.smoothed.angle',
+  # 'Roll.angle'
+  # 'Roll.smoothed.angle' 
+)
+
+
+
+# Modify variables to keep as needed
+vars_to_keep_dec <- c(
+  'file_name_original',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  'Mag_x',
+  'Mag_y',
+  'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'#,
+  # 'Pitch angle',
+  # 'Pitch.smoothed.angle',
+  # 'Roll angle'
+  # 'Roll.smoothed.angle'
+)
+
+# Wrangle September files
+raw_data_sep <- sep_paths %>% 
+  # Read files
+  map(
+    read_csv, 
+    id = "file_name_original",
+    col_types = cols()
+  ) %>%
+  # Select columns to keep
+  map(
+    ~ try(select(
+      .x,
+      vars_to_keep_sep
+    ), silent = TRUE)
+  ) %>% 
+  # Add sheep name column
+  map(
+    ~ try(add_column(
+        .x, 
+        sheep_name = str_extract(
+          .x$file_name_original,
+          "ov.."
+        )
+    ), silent = TRUE)
+  ) %>% 
+  # Add sheep number column 
+  map(
+    ~ try(add_column(
+        .x, 
+        sheep_number = as.double(
+          str_extract(
+            .x$sheep_name,
+            "[0-9]+"
+          )
+        )
+    ), silent = TRUE)
+  ) %>% 
+  # Add Year variable
+  map(
+    ~ try(mutate(
+        .x, 
+        year = year(DateTime)
+    ), silent = TRUE)
+  ) %>% 
+  # Add Month variable
+  map(
+    ~ try(mutate(
+        .x, 
+        month = month(DateTime)
+    ), silent = TRUE)
+  ) %>% 
+  # Add Day variable
+  map(
+    ~ try(mutate(
+        .x, 
+        day = day(DateTime)
+    ), silent = TRUE)
+  ) %>%
+  # Remove DateTime var
+  map(
+    ~ try(select(
+        .x,
+        -'DateTime'
+    ), silent = TRUE)
+  ) %>% 
+  # Rename all vars to lower-case names to avoid problems
+  map(
+    ~ try(rename_all(
+        .x, 
+        tolower
+    ), silent = TRUE)
+  ) %>% 
+  # Add column indicating video name
+  map(
+    ~ try(mutate(
+        .x,
+        video_name = str_extract(
+          .x$file_name_original, 
+          pattern = "video.."
+        )
+    ), silent = TRUE)
+  ) %>% 
+  # Add column indicating video number
+  map(
+    ~ try(mutate(
+        .x, 
+        video_number = as.double(
+          str_extract(
+            .x$video_name, 
+            pattern = "[0-9]+"
+          ) 
+        )  
+    ), silent = TRUE)
+  ) %>% 
+  # Bind rows to form a single tibble
+  bind_rows %>%
+  suppressMessages
+  
+
+
+# Wrangle December files
+## December files have some problems where a few variables don't have consistent classes
+## across files. We will have to add a few steps to correct this. 
+
+# UPDATE: Added try() statements in order to skip the failing dataframes (those without magnetometer data or any other data). 
+
+raw_data_dic <- dic_paths %>% 
+  # Read files
+  map(
+    read_csv, 
+    id = "file_name_original",
+    col_types = cols()
+  ) %>%
+  # Select columns to keep
+  map(
+    ~ try(select(
+      .x,
+      all_of(vars_to_keep_dec)
+    ), silent = TRUE)
+  ) %>%  
+  
+  # Use this if you want to include Pitch Angle and Roll Angle, but you'll have the problem of about 90% of NAs in those variables
+  # map(
+  #   ~ { 
+  #     cols_to_select <- ifelse(
+  #       all(c("Pitch angle", "Roll angle") %in% names(.x)),
+  #       c("Pitch angle", "Roll angle"),
+  #       c("Pitch.angle", "Roll.angle")
+  #     )
+  #     try(select(
+  #     .x,
+  #     c(vars_to_keep_dec, cols_to_select)
+  #   ), silent = TRUE)
+  #   }
+  # ) %>% 
+  # Add sheep name column
+  map(
+    ~ try(add_column(
+        .x, 
+        sheep_name = str_extract(
+          .x$file_name_original,
+          "ov.."
+        )
+    ), silent = TRUE)
+  ) %>% 
+  # Add sheep number column 
+  map(
+    ~ try(add_column(
+        .x, 
+        sheep_number = as.double(
+          str_extract(
+            .x$sheep_name,
+            "[0-9]+"
+          )
+        )
+    ), silent = TRUE)
+  ) %>% 
+  # Add Year variable
+  map(
+    ~ try(mutate(
+        .x, 
+        year = year(DateTime)
+    ), silent = TRUE)
+  ) %>% 
+  # Add Month variable
+  map(
+    ~ try(mutate(
+        .x, 
+        month = month(DateTime)
+    ), silent = TRUE)
+  ) %>% 
+  # Add Day variable
+  map(
+    ~ try(mutate(
+        .x, 
+        day = day(DateTime)
+    ), silent = TRUE)
+  ) %>%
+  # Remove DateTime var
+  map(
+    ~ try(select(
+        .x,
+        -'DateTime'
+    ), silent = TRUE)
+  ) %>% 
+  # Rename all vars to lower-case names to avoid problems
+  map(
+    ~ try(rename_all(
+        .x, 
+        tolower
+    ), silent = TRUE)
+  ) %>% 
+  # Coerce to consistent classes
+  map(
+    ~ try(mutate_at(
+        .x,
+        c('hours', 'minutes', 'seconds'),
+        as.double
+      ), silent = TRUE)
+  ) %>%  
+  # Add column indicating video name
+  map(
+    ~ try(mutate(
+        .x,
+        video_name = str_extract(
+          .x$file_name_original, 
+          pattern = "video.."
+        )
+    ), silent = TRUE)
+  ) %>% 
+  # Add column indicating video number
+  map(
+    ~ try(mutate(
+        .x, 
+        video_number = as.double(
+          str_extract(
+            .x$video_name, 
+            pattern = "[0-9]+"
+          ) 
+        )
+    ), silent = TRUE)
+  ) %>%
+  # Catch the errors
+  map(~ if (inherits(.x, "try-error")) NULL else .x) %>% 
+  # Bind rows to form a single tibble
+  bind_rows %>% 
+  suppressMessages
+  
+
+
+```
+
+
+
+```{r merge september and december data}
+
+clean_data <- bind_rows(
+  raw_data_dic, 
+  raw_data_sep
+) 
+ 
+
+print("Amount of NAs in each column")
+nas <- colSums(is.na(clean_data)) %>% print()
+
+print("Percentage of NAs relative to total rows in dataset")
+nas / nrow(clean_data) * 100 
+
+
+
+```
+

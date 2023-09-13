@@ -4,6 +4,12 @@ output: html_document
 bibliography: references.bib
 ---
 
+Cosas a hacer tal vez: 
+
+- Estandarizar los datos por oveja, para poder contemplar variaciones a nivel de individuo. 
+
+
+
 Update August 23 of 2023: We will use this rmd to get a clean dataset to use as the RAW dataset in the paper and maybe upload it to some data bank. The rest of the data wrangling (e.g., chopping data into 5s
 segments and prepping for image building will be done in python)
 
@@ -301,33 +307,33 @@ vars_to_keep_sep <- c(
   'Minutes',
   'Seconds',
   'Event.no.',
-  'Behaviours'#,
-  # 'Pitch.angle',
+  'Behaviours',
+  'Pitch.angle',
   # 'Pitch.smoothed.angle',
-  # 'Roll.angle' 
+  'Roll.angle'
   # 'Roll.smoothed.angle' 
 )
 
 
-vars_to_keep_dic <- c(
-  'file_name_original',
-  'Acc_x',
-  'Acc_y',
-  'Acc_z', 
-  # 'Mag_x',
-  # 'Mag_y',
-  # 'Mag_z',
-  'DateTime', 
-  'Hours',
-  'Minutes',
-  'Seconds',
-  'Event.no.',
-  'Behaviours'#,
-  # 'Pitch.angle',
-  # 'Pitch.smoothed.angle',
-  # 'Roll.angle' 
-  # 'Roll.smoothed.angle'
-)
+# vars_to_keep_dic <- c(
+#   'file_name_original',
+#   'Acc_x',
+#   'Acc_y',
+#   'Acc_z', 
+#   # 'Mag_x',
+#   # 'Mag_y',
+#   # 'Mag_z',
+#   'DateTime', 
+#   'Hours',
+#   'Minutes',
+#   'Seconds',
+#   'Event.no.',
+#   'Behaviours',
+#   'Pitch.angle',
+#   # 'Pitch.smoothed.angle',
+#   'Roll.angle'
+#   # 'Roll.smoothed.angle'
+# )
 
 vars_to_keep_dic2 <- c(
   'file_name_original',
