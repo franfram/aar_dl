@@ -295,6 +295,256 @@ pitch angle is derived from magnetometer and accelerometer
 
 ```{r}
 
+
+# Modify variables to keep as needed
+vars_to_keep_sep <- c(
+  'file_name_original',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  'Mag_x',
+  'Mag_y',
+  'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'#,
+  # 'Pitch.angle',
+  # 'Pitch.smoothed.angle',
+  # 'Roll.angle'#,
+  # 'Roll.smoothed.angle'
+)
+
+
+
+# Modify variables to keep as needed
+vars_to_keep_dec <- c(
+  'file_name_original',
+  'Acc_x',
+  'Acc_y',
+  'Acc_z', 
+  'Mag_x',
+  'Mag_y',
+  'Mag_z',
+  'DateTime', 
+  'Hours',
+  'Minutes',
+  'Seconds',
+  'Event.no.',
+  'Behaviours'#,
+  # 'Pitch angle',
+  # 'Pitch.smoothed.angle',
+  # 'Roll angle'#,
+  # 'Roll.smoothed.angle'
+)
+
+
+
+
+raw_data_dic <- dic_paths %>% 
+  # Read files
+  map(
+    read_csv, 
+    id = "file_name_original",
+    col_types = cols()
+  ) %>%
+  # Select columns to keep
+  # map(
+  #   ~ try(select(
+  #     .x,
+  #     all_of(vars_to_keep_dec)
+  #   ), silent = TRUE)
+  # ) %>%  
+  # 
+  # Use this if you want to include Pitch Angle and Roll Angle, but you'll have the problem of about 90% of NAs in those variables
+  map(
+    ~ {
+      
+      # print(paste("colnames of dataframe prior to column select:", names(.x)))
+      
+      cols_to_select <- if (all(c("Pitch angle", "Roll angle") %in% names(.x))) {
+        c("Pitch angle", "Roll angle")
+      } else {
+        c("Pitch.angle", "Roll.angle")
+      }
+      
+      # cols_list_dec <<- append(cols_list_dec, list(cols_to_select))
+     
+      # print(paste("TO BE APPENDED COLNAMES", cols_to_select))
+      
+      # print("TTT")
+      # print(names(.x))
+      
+      try(select(
+        .x,
+        c(vars_to_keep_dec, cols_to_select)
+      ), silent = TRUE)
+      
+      # print("GGG")
+      # print(names(.x))
+      # 
+      # 
+      # print(paste("SELECTED COLNAMES: ", c(vars_to_keep_dec, cols_to_select)))
+      # 
+      # print("TEST")
+      # print(names(.x))
+      
+    }
+  ) %>%
+  #Add sheep name column
+  map(
+    ~ {
+      try(add_column(
+        .x,
+        sheep_name = str_extract(
+          .x$file_name_original,
+          "ov.."
+        )
+    ), silent = TRUE)
+
+     # print("TEST2")
+     # print(names(.x))
+    }
+
+  ) %>% 
+  # Add sheep number column
+  map(
+    ~ try(add_column(
+        .x,
+        sheep_number = as.double(
+          str_extract(
+            .x$sheep_name,
+            "[0-9]+"
+          )
+        )
+    ), silent = TRUE)
+  ) %>%
+  # Add Year variable
+  map(
+    ~ try(mutate(
+        .x,
+        year = year(DateTime)
+    ), silent = TRUE)
+  ) %>%
+  # Add Month variable
+  map(
+    ~ try(mutate(
+        .x,
+        month = month(DateTime)
+    ), silent = TRUE)
+  ) %>%
+  # Add Day variable
+  map(
+    ~ try(mutate(
+        .x,
+        day = day(DateTime)
+    ), silent = TRUE)
+  ) %>%
+  
+  #Remove DateTime var
+  map(
+    ~ {
+      try(select(
+        .x,
+        -'DateTime'
+    ), silent = TRUE)
+
+
+    # print("DateTime")
+    # print(names(.x))
+
+
+    }
+  ) %>%
+  # Rename all vars to lower-case names to avoid problems
+  map(
+    ~ {
+      try(rename_all(
+        .x,
+        tolower
+    ), silent = TRUE)
+
+
+
+
+    # print("LOWER CASE")
+    # print(names(.x))
+    
+    }
+
+  ) %>%
+  # Coerce to consistent classes
+  map(
+    {
+    ~ try(mutate_at(
+        .x,
+        c('hours', 'minutes', 'seconds'),
+        as.double
+      ), silent = TRUE)
+
+    # print("CONSISTENT CLASSES")
+    # print(names(.x))
+
+    }
+  ) %>%
+  # Add column indicating video name
+  map(
+    ~ {try(mutate(
+        .x,
+        video_name = str_extract(
+          .x$file_name_original,
+          pattern = "video.."
+        )
+    ), silent = TRUE)
+
+    # print("VIDEO NAME")
+    # print(names(.x))
+
+    }
+
+  ) %>%
+  # Add column indicating video number
+  map(
+    ~ {
+
+      try(mutate(
+        .x,
+        video_number = as.double(
+          str_extract(
+            .x$video_name,
+            pattern = "[0-9]+"
+          )
+        )
+    ), silent = TRUE)
+      
+    # print("VIDEO NUMBER")
+    # print(names(.x))
+      
+    }
+  ) %>%
+  #Catch the errors
+  map(~ if (inherits(.x, "try-error")) NULL else .x) %>%
+  # # Bind rows to form a single tibble
+  bind_rows %>%
+  suppressMessages
+  
+
+# raw_data_dic
+# str(raw_data_dic[1])
+# 
+str(raw_data_dic)
+# 
+# raw_data_dic %>% map(ncol)
+
+```
+
+#WORKS UP TO THE CELL ABOVE
+
+
+```{r}
+
 # Modify variables to keep as needed
 vars_to_keep_sep <- c(
   'file_name_original',
@@ -680,7 +930,7 @@ raw_data_dic <- dic_paths %>%
   map(
     ~ {
       
-      print(paste("colnames of dataframe prior to column select:", names(.x)))
+      # print(paste("colnames of dataframe prior to column select:", names(.x)))
       
       cols_to_select <- if (all(c("Pitch angle", "Roll angle") %in% names(.x))) {
         c("Pitch angle", "Roll angle")
@@ -690,10 +940,10 @@ raw_data_dic <- dic_paths %>%
       
       # cols_list_dec <<- append(cols_list_dec, list(cols_to_select))
      
-      print(paste("TO BE APPENDED COLNAMES", cols_to_select))
+      # print(paste("TO BE APPENDED COLNAMES", cols_to_select))
       
-      print("TTT")
-      print(names(.x))
+      # print("TTT")
+      # print(names(.x))
       
       try(select(
         .x,
@@ -844,16 +1094,19 @@ raw_data_dic <- dic_paths %>%
   ) %>%
   #Catch the errors
   map(~ if (inherits(.x, "try-error")) NULL else .x) %>%
-  # Bind rows to form a single tibble
+  # # Bind rows to form a single tibble
   bind_rows %>%
   suppressMessages
   
 
-
+raw_data_dic
 # str(raw_data_dic[1])
-
+# 
+str(raw_data_dic)
+# 
+# raw_data_dic %>% map(ncol)
 ```
-
+# UPDATE: the one above works but note that there's NAs produced in pitch angle and roll angle. 
 
 
 THIS WORKS
