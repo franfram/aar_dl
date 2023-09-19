@@ -1,0 +1,254 @@
+- We will use a stride-1 convolution to be able to add layers without changing the output size. 
+- Our image will be size `h` by `w`, using a padding of `pad` and a stride of `stride`. Note that: The general formula for each dimension is (n + 2*pad - ks)//stride + 1, where pad is the padding, ks, the size of our kernel, and stride is the stride.
+- 
+
+
+
+
+
+We will feed the CNN 128second segments. These segments will contain 20 behaviour labels, each corresponding to 6.4 seconds of data. 
+And since we have 40Hz data, each label will correspond to 40x6.4=256 elements in an array. And the whole segment will have 
+40x6.4x20=5120 elements in an array. These 128 second segments will have 8 channels (one per each feature). 
+Thus 1 input is a 5120x8 array. These 5120x8 arrays will pass through many 1D/2D Convolution + Max Pooling layers until 
+we get to an output that is an array of 20x8, that is, until we have / compressed / downsampled / dimensionality reduced / 
+the information stored in 1 behaviour label from 256 elements in the input array to 1 element in the output array. 
+The dimensionality reduction will be done by the Max Pooling layer with a stride of 2, thus each MaxPool layer
+will reduce in half the array? Colin said that each maxpool halves the input, thus 256 -> 128 -> 64 -> 32 -> 16 -> 8 -> 4 -> 2 -> 1 
+but what about the other dimension, the one related to the 8 channels?
+
+https://chat.openai.com/share/e735705c-6d05-4645-89f8-9a04c6e9b94a
+
+
+
+Features included will be (Acc = Accelerometer, Mag = Magnetometer): 
+Acc axis x, 
+Acc axis y, 
+Acc axis z, 
+Mag axis x, 
+Mag axis y, 
+Mag axis z, 
+Pitch angle, 
+Roll angle
+
+
+
+Accelerometer: Measures the acceleration forces acting on the sensor. These forces can be due to gravity 
+(when the sensor is stationary) or due to motion. 
+Thus, it can detect the orientation with respect to gravity (for static measurements) and sense movement.
+
+Magnetometer: Measures the strength and direction of the magnetic field around the sensor. 
+It's primarily used to determine the device's orientation relative to Earth's magnetic field, allowing 
+it to determine magnetic north.
+
+Pitch and Roll:
+
+    Pitch (θ): This is the angle between the horizontal plane and the front-to-back axis (typically 
+    denoted as the X-axis). When you tilt your head up and down, you're changing the pitch. It's 
+    essentially the "nodding" motion.
+
+    Roll (φ): This is the angle between the horizontal plane and the side-to-side axis (typically 
+    denoted as the Y-axis). Imagine tilting your head from one shoulder to the other; this 
+    action is changing the roll. It's like the "tilting" motion of your head.
+
+Using the accelerometer data:
+
+Pitch can be computed from the accelerometer readings using the following formula:
+
+$$
+\theta = arctan(frac)
+$$
+
+
+θ=arctan⁡(axay2+az2)θ=arctan(ay2​+az2​
+
+​ax​​)
+Where:
+
+axax​, ayay​, and azaz​ are the accelerometer readings in the x, y, and z directions respectively.
+
+Roll can be computed using:
+ϕ=arctan⁡(ayax2+az2)ϕ=arctan(ax2​+az2​
+
+​ay​​)
+
+Note: The above calculations assume that the only acceleration the accelerometer senses is the acceleration due to gravity (i.e., the sheep is not in motion). If the sheep is moving, the readings will include both the acceleration due to motion and gravity, which complicates the interpretation.
+
+
+
+
+Taking into account feature engineering (creating new transformations of the input data in order
+to make it easier for the model), what about feature engineering in vision models?
+
+
+
+
+A convolution applies a `kernel` across an image. A kernel is matrix (typically 3x3), matrices in the context of deep learning are 
+functions. 
+
+
+Convolutions extract information from the image?
+Convolutions compress information from the image?
+
+If you do a 2D convolution, the kernel is a matrix; if you do a 1D convolution, the kernel is a vector. 
+
+
+when we do a convolution (i.e., we apply a kernel to an array and get another array as a result), we lose the surrounding pixels
+of the image. Thus a convolution implies a loss in information. To avoid that we need to do 
+
+
+
+Pytorch represents an image as a rank-3 tensor with dimensions `[channels, rows, columns]` (what about Tensorflow?)
+
+
+Kernels in PyTorch need to be rank-4 tensors: 
+`[channels_in, features_out, rows, columns]`
+
+
+In later layers the convolutional kernels become complex transformations of features from lower 
+levels, and these are complex transformations that we don't know how to manually construct ourselves.
+Thus the best approach is to learn the values of the kernel (with SGD), that is, the model will learn
+the features that are useful for classification. 
+
+
+In order to do classification with CNNs, we need the output activation per image be a single element. 
+One way to deal with this is to use enough stride-2 convolutions such that the final layer is size 1. 
+That is, if the image is 28x28 then after one stride-2 convolution the size will be 14×14, after two 
+it will be 7×7, then 4×4, 2×2, and finally size 1.
+
+
+
+
+A `convolutional nerual network` it's just when we use convolutional layers insteas of (or in addition to) 
+regular linear layers. 
+
+
+
+# Strides and Padding
+With appropriate padding, we can ensure that the output activation map is the same size as the original image, 
+which can make things a lot simpler when we construct our architectures. <<pad_conv>> shows how adding padding 
+allows us to apply the kernels in the image corners.
+
+If we add a kernel of size ks by ks (with ks an odd number), the necessary padding on each side to keep the 
+same shape is ks//2. An even number for ks would require a different amount of padding on the top/bottom 
+and left/right, but in practice we almost never use an even filter size.
+
+So far, when we have applied the kernel to the grid, we have moved it one pixel over at a time. But we 
+can jump further; for instance, we could move over two pixels after each kernel application, as 
+in <<three_by_five_conv>>. This is known as a stride-2 convolution. The most common kernel size in 
+practice is 3×3, and the most common padding is 1. As you'll see, stride-2 convolutions are useful 
+for decreasing the size of our outputs, and stride-1 convolutions are useful for adding layers 
+without changing the output size.
+
+
+
+In an image of size h by w, using a padding of 1 and a stride of 2 will give us a result of size (h+1)//2 by (w+1)//2. 
+The general formula for each dimension is (n + 2*pad - ks)//stride + 1, where pad is the padding, ks, the size of 
+our kernel, and stride is the stride.
+
+
+
+
+Notes: 
+- Using less convolutional layers will help reduce overfitting. i.e., we need N amount of 
+Max Pooling layers to get to compress the 256 (6 dimensional) elements that represent the 6.4s block that 
+have a single label into a 1 (6 dimensional) element that will be fed to the Transformer. But the amount of convolutional
+layers can vary. 
+
+
+
+
+
+
+
+
+Theory: 
+Max pooling is a common operation in the architecture of Convolutional Neural Networks (CNNs). It's used primarily for two main purposes:
+
+    Downsampling (Dimensionality Reduction): As a CNN processes an image, it often produces feature maps that are spatially large. These large feature maps can be computationally expensive to process in deeper layers, and they can overfit to fine-grained details that may not be generally useful. Max pooling helps reduce the spatial dimensions (width and height) of these feature maps, which decreases the amount of parameters and computations in the network.
+
+    Invariance to Small Translations: By selecting the maximum value from a local patch of values in the feature map, the output becomes somewhat invariant to small translations of the input. This means that if an object or feature in the image moves slightly, the max pooling operation can still detect and represent it.
+
+Here's how max pooling works:
+
+    Sliding Window: A window (often of size 2x2 or 3x3) slides over the input feature map.
+
+    Select Maximum: For each position of the window, the maximum value within that window is taken.
+
+    Stride: The window moves according to a specified stride. If the stride is 2 (which is common), then the window moves two units at a time, reducing the spatial dimensions of the feature map by half in each dimension. For instance, a stride of 2 on a 2x2 window would reduce a 4x4 feature map to a 2x2 feature map.
+
+Visually, for a 2x2 window:
+
+```console
+Original 4x4 feature map:
+a b c d
+e f g h
+i j k l
+m n o p
+
+After 2x2 max pooling with stride of 2:
+f g
+n o
+```'''
+
+
+Some things to note:
+
+    No Parameters: Unlike convolutional layers, max pooling operations don’t have any trainable parameters. They simply perform an operation based on a defined window size and stride.
+
+    Other Pooling Methods: Max pooling is not the only pooling method. Average pooling, which takes the average of the values within the window, is another method, though it’s less common than max pooling in CNNs for visual tasks.
+
+    Potential Information Loss: One trade-off with max pooling is that by downsampling, you're discarding a lot of information. Modern architectures sometimes use other methods or combine pooling with other strategies to preserve more spatial information.
+
+Despite its simplicity, max pooling has proven to be effective in many successful CNN architectures, such as AlexNet, VGG, etc. However, newer architectures like ResNet and DenseNet have shown that it's possible to achieve great performance without aggressive downsampling in the early layers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Como nos conocimos, por que consideramos que esto era importante y que nos teniamos que meter a fondo en esto.
+Teoría introductoria, teorema de aproximación de funciones, emergencia del razonamiento, historia del AI y del deep learning.
+Revolución del 2023, antes y despues de chatGPT
+Nueva frontera de problemas ahora resolubles, problema del acceso al conocimiento (proyecto alexandria) .
+Cómo construir sobre el gran cerebro llamado GPT y Cómo podés encarar uno de estos problemas vos mismo, relatos del desarrollo de ALI.
+Cuestiones a notar: GPT no implica OpenAI, importancia del trabajo colectivo open source. Hitos alcanzados por la comunidad (huggingface, tinycorp). Por qué hacer la IA open source es tan importante.
+
+
+
+
+
+Por qué las redes neuronales son revolucionarias?
+Todo se apoya en el Teorema Universal de Aproximación, que prueba que si 
+tenemos una red neuronal con ciertas características y con suficientes datos, 
+aproximar cualquier función. Y? por qué es importante esto? qué vieron los partidarios del 
+deep learning hace más de 30 años? La cuestión reside en que TODO lo que ocurre en el mundo
+se puede representar como una función. Gran parte de la ciencia es encontrar la función que describe 
+fenómeno determinado. Pero estamos limitados a tener que describir explícitamente esa función. 
+Y eso es una enorme limitación. Cuál es la función que describe la traducción de un lenguaje a otro?
+cuál es la función para manejar un auto? cuál es la función que convierte señales cerebrales a inputs
+en una computadora? No tenemos idea y capaz que nunca podamos describir esas funciones en papel. 
+Pero derrepente, según prueba el Teorema Universal de Aproximación, tenemos un aparato matemático y
+computacional que puede encontrar estas funciones. Eso quiere decir que potencialmente, las redes 
+neuronales pueden resolver absolutamente todo. Claro que esto hoy en día no es así y encontrar una 
+función relativamente simple requiere un esfuerzo abismal de ingeniería, recolección de datos y poder 
+de cómputo. Las primeras redes neuronales que empezaron a resolver problemas grandes arrancaron hace
+aproximadamente 10 años, con lo que se conoce como aprendizaje supervisado. Agarramos los datos de
+input (e.g., imágenes), los datos de output (e.g., texto que describa el contenido de la imagen) y 
+lanzamos un proceso de optimización para encontrar la función que mapea los inputs con los outputs. 
+Esto funciona pero tiene grandes problemas, necesitamos un montón de datos, porque estas redes
+con este enfoque de aprendizaje no puede aprender nada que no vieron. 
+
