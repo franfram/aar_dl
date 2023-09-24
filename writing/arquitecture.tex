@@ -1,3 +1,58 @@
+Things to ask to Colin: 
+- a kernel_size of 3 is common, but isn't this too small considering we have 40Hz data and 6.4s per label?
+ 
+
+
+Things to tweak depending on performance and overfitting/underfitting: 
+- Amount of Conv1D layers: too many may lead to overfitting, to few may underfit
+- Amount of filters: too many might overfit, too few might underfit
+- 
+
+
+
+Certainly! Let's delve into the details of each component:
+
+    Conv1D:
+        Explanation: Conv1D, or one-dimensional convolution, is a type of layer designed to operate over sequential data. By sliding a filter (or kernel) over the sequence, this layer can detect local patterns within a specified window size (kernel_size). The primary objective of convolution layers is to identify and extract features from the data. In the context of animal movement data, Conv1D layers can recognize patterns within sequences of the accelerometer and magnetometer readings, helping the model differentiate between behaviors like walking, eating, and resting.
+
+    MaxPooling1D:
+        Explanation: MaxPooling1D layers reduce the spatial dimensions of the input data by selecting the maximum value over a specified window (pool_size) and then moving the window according to the specified stride (default is the pool size). This has the dual benefit of providing a form of translation invariance (since it's focusing on the most prominent feature in the window) and reducing the computational demands for the deeper layers. By successively halving data's spatial dimension, the model can focus on broader and more abstract features while also accelerating the computation.
+
+    Flatten:
+        Explanation: The Flatten layer is used to convert the multi-dimensional output of the previous layers into a one-dimensional vector. This transformation is necessary because after the convolutional and pooling operations, you often want to input the data into fully connected layers (Dense layers) for further processing or classification. Dense layers expect a one-dimensional input, so the Flatten layer serves as a bridge between the multi-dimensional spatial data and the Dense layers.
+
+    Dense:
+        Explanation: Dense layers, also known as fully connected layers, consist of neurons that connect to all activations in the previous layer. They are typically placed after convolutional and pooling layers to produce the final classification results. In your case, the last Dense layer with 3 neurons corresponds to the three behavior classes (Walking, Eating, Resting), with each neuron providing the predicted probability for each class.
+
+    filters=64:
+        Explanation: The number of filters in a convolutional layer represents how many unique features or "views" of the input data the model tries to capture. The choice of 64 is based on typical practices in deep learning where powers of 2 are frequently used. This convention is both for memory optimization and as a general heuristic. Depending on the complexity of your data, this number can be adjusted: too many might overfit, and too few might underfit.
+
+    kernel_size=3:
+        Explanation: The kernel size is the size of the "window" that slides over the input data, determining the number of consecutive data points the model looks at concurrently. For 1D sequences, a kernel_size of 2 or 3 is common since the goal is often to identify patterns between adjacent data points.
+
+    activation='relu':
+        Explanation: Activation functions introduce non-linearity into the model, enabling it to capture more complex relationships in the data. The Rectified Linear Unit (ReLU) function has proven to be effective in various neural network applications due to its simplicity and efficiency.
+
+    padding='same':
+        Explanation: Padding ensures that the output of a convolutional layer retains the same spatial dimensions as its input. Using "same" padding is beneficial because it ensures that the size doesn’t reduce too quickly as you add more convolutional layers.
+
+    pool_size=2:
+        Explanation: Pooling layers serve to reduce the spatial dimensions of the input. A pool_size of 2 is commonly used to halve the spatial dimensions of the data, aligning with the idea of capturing broader features as you go deeper into the network.
+
+
+
+
+
+
+Things about base arquitecture: 
+    -   The number of filters and the kernel size in the convolutional layers can be adjusted based on performance and experimentation.
+    You might want to consider using Batch Normalization or Dropout layers to improve generalization.
+    The architecture I've provided is a basic starting point; feel free to refine it as needed. Adjust the number of neurons in the dense layer, add more dense layers, or tweak other hyperparameters to suit your specific problem.
+    Remember to preprocess your data correctly. Normalizing or standardizing input data can be crucial for training deep learning models effectively.
+
+
+
+
 - We will use a stride-1 convolution to be able to add layers without changing the output size. 
 - Our image will be size `h` by `w`, using a padding of `pad` and a stride of `stride`. Note that: The general formula for each dimension is (n + 2*pad - ks)//stride + 1, where pad is the padding, ks, the size of our kernel, and stride is the stride.
 - 
@@ -161,7 +216,7 @@ layers can vary.
 
 
 
-Theory: 
+# Theory: 
 Max pooling is a common operation in the architecture of Convolutional Neural Networks (CNNs). It's used primarily for two main purposes:
 
     Downsampling (Dimensionality Reduction): As a CNN processes an image, it often produces feature maps that are spatially large. These large feature maps can be computationally expensive to process in deeper layers, and they can overfit to fine-grained details that may not be generally useful. Max pooling helps reduce the spatial dimensions (width and height) of these feature maps, which decreases the amount of parameters and computations in the network.
@@ -202,6 +257,28 @@ Some things to note:
 Despite its simplicity, max pooling has proven to be effective in many successful CNN architectures, such as AlexNet, VGG, etc. However, newer architectures like ResNet and DenseNet have shown that it's possible to achieve great performance without aggressive downsampling in the early layers.
 
 
+Other methods and strategies to Max Pooling to avoid Potential Information Loss: 
+    Strided Convolution: Instead of using pooling layers for downsampling, some architectures use convolutional layers with a stride greater than 1. This way, you still get a downsampling effect, but unlike pooling, the operation involves learnable parameters, which might capture more meaningful information during downsampling.
+
+    Average Pooling: As opposed to max pooling, which takes the maximum value in a window, average pooling takes the average. This can sometimes preserve more general information than max pooling, though it's less commonly used for downsampling in modern architectures.
+
+    Global Average Pooling (GAP): Towards the end of a CNN, instead of using fully connected layers, some architectures use GAP. This operation takes the average of each feature map and produces a single value for each. It helps in reducing the total number of parameters, especially in the last layers, and can sometimes lead to better generalization.
+
+    Dilated Convolution: Dilated convolutions, also known as atrous convolutions, introduce gaps in the kernel application. By using dilated convolutions, one can increase the receptive field of neurons without increasing the number of parameters or the computational cost.
+
+    Depthwise Separable Convolutions: Popularized by architectures like MobileNet, these are a factorized version of convolutions that split the convolution operation into depthwise convolution followed by pointwise convolution. This allows for reduced computational costs while still capturing spatial and depth information effectively.
+
+    Skip Connections and Residual Blocks: Used prominently in architectures like ResNet, skip connections allow for the direct transfer of information from earlier layers to later layers. This helps in retaining spatial information and also addresses the vanishing gradient problem in deep networks.
+
+    U-Net Architecture: Particularly popular in segmentation tasks, the U-Net architecture introduces an upsampling path that complements the downsampling path of the network. This helps in retaining and recovering spatial information for precise localization in tasks like image segmentation.
+
+    Pyramid Pooling: This involves pooling operations at different scales and then concatenating them. It's a way to capture both local and global context in an image.
+
+    Spatial Pyramid Pooling (SPP): A layer that converts the arbitrary size of feature maps into a fixed-size output. It divides the feature map into different scales and performs pooling at each scale, making the network robust to various input sizes.
+
+    Attention Mechanisms: Borrowed from the realm of NLP and transformer architectures, attention mechanisms can weigh the importance of different spatial locations differently, focusing the network's "attention" on more crucial areas of an image.
+
+These are just some of the prominent methods and strategies that have emerged as alternatives or enhancements to traditional pooling in CNN architectures. The best approach often depends on the specific problem being addressed and the constraints of the computational environment.
 
 
 
@@ -236,7 +313,7 @@ Todo se apoya en el Teorema Universal de Aproximación, que prueba que si
 tenemos una red neuronal con ciertas características y con suficientes datos, 
 aproximar cualquier función. Y? por qué es importante esto? qué vieron los partidarios del 
 deep learning hace más de 30 años? La cuestión reside en que TODO lo que ocurre en el mundo
-se puede representar como una función. Gran parte de la ciencia es encontrar la función que describe 
+se puede representar como una función. Gran parte de la ciencia es encontrar la función que describe un
 fenómeno determinado. Pero estamos limitados a tener que describir explícitamente esa función. 
 Y eso es una enorme limitación. Cuál es la función que describe la traducción de un lenguaje a otro?
 cuál es la función para manejar un auto? cuál es la función que convierte señales cerebrales a inputs
@@ -244,11 +321,173 @@ en una computadora? No tenemos idea y capaz que nunca podamos describir esas fun
 Pero derrepente, según prueba el Teorema Universal de Aproximación, tenemos un aparato matemático y
 computacional que puede encontrar estas funciones. Eso quiere decir que potencialmente, las redes 
 neuronales pueden resolver absolutamente todo. Claro que esto hoy en día no es así y encontrar una 
-función relativamente simple requiere un esfuerzo abismal de ingeniería, recolección de datos y poder 
+función relativamente simple requiere un esfuerzo enorme de ingeniería, recolección de datos y poder 
 de cómputo. Las primeras redes neuronales que empezaron a resolver problemas grandes arrancaron hace
 aproximadamente 10 años, con lo que se conoce como aprendizaje supervisado. Agarramos los datos de
 input (e.g., imágenes), los datos de output (e.g., texto que describa el contenido de la imagen) y 
 lanzamos un proceso de optimización para encontrar la función que mapea los inputs con los outputs. 
-Esto funciona pero tiene grandes problemas, necesitamos un montón de datos, porque estas redes
+Esto funciona pero tiene grandes problemas, como la necesidad de tener un montón de datos, porque estas redes
 con este enfoque de aprendizaje no puede aprender nada que no vieron. 
+Esto en parte se empieza a resolver con algo que se llama aprendizaje auto-supervisado, o dicho / en criollo / sencillamente /, 
+/"completame lo que falta" / "fill in the gap"/. Esta estrategia es muy simple y resuelve en gran parte la necesidad de tener datos
+anotados. La cuestión es que completar lo que falta, tarea que parece facil, requiere de entender como funcionan las cosas. 
+Porque por ejemplo, completar la frase / "the cat is under the __" / "me voy a ir a la cama a ___" (dormir) / no parece tan dificil. 
+Pero que pasa si lo que hay que completar es un problema matematico, como por ejemplo "\sqrt[3]{27} = ___". Derrepente esto 
+no es tan fácil. Esto requiere que la red neuronal cree una especie de "modelo mental" de cómo funciona la matemática. 
+Esto lo logra la red neuronal durante el entrenamiento, es como un objeto matemático y computacional que muta y se modifica para poder
+encontrar la funcion que describa este aparente razonamiento. Primer señal de que hay algo emergente ahí, acaso empezó a emerger el razonamiento?
+Fast forward 30 de noviembre 2022. Sale ChatGPT. El modelo de OpenAI entrenado usando aprendizaje auto-supervisado y una cantidad de 
+computo masiva (bitter lesson de Rich Sutton). 
 
+START Tangente:
+Gran parte de la historia del AI se basó en investigadores y desarolladores que querían enseñarle a la máquina, inyectarles el conocimiento. 
+(tal vez eso dice bastante de nosotos). La premisa era esa, todo lo que queramos que sepa, se lo tenemos que dar nosotros. Queremos que la 
+máquina entienda lógica? le tenemos que meter un módulo de lógica. Queremos que entienda el lenguaje? tenemos que meterle las reglas semánticas de 
+alguna manera. Durante varias décadas, este fue el approach dominante. Casi toda la investigación que se hacía era en cómo inyectarle el conocimiento 
+que nosotros tenemos a las máquinas de una forma eficaz y eficiente. Pero allá por los 80s/90s algunos empezaron a pensar que no tenía mucho sentido
+eso, que en verdad no escalaba mucho. Que no había forma de enseñarle todo el conocimiento del mundo a una máquina, y que lo mejor era que la máquina
+lo aprenda por sí misma. Ahí es donde empieza a surgir esta nueva oleada de AI. AI que aprende sola (i.e., aprendizaje auto-supervisado). 
+Rich Sutton dice: 
+"
+As in the games, researchers always tried to make systems that worked the way the researchers thought their own minds 
+worked---they tried to put that knowledge in their systems---but it proved ultimately counterproductive, and a colossal 
+waste of researcher's time, when, through Moore's law, massive computation became available and a means was found to put it to good use.
+[...]
+This is a big lesson. As a field, we still have not thoroughly learned it, as we are continuing to make the same kind of mistakes. 
+To see this, and to effectively resist it, we have to understand the appeal of these mistakes. We have to learn the bitter lesson
+that building in how we think we think does not work in the long run. The bitter lesson is based on the historical observations 
+that 1) AI researchers have often tried to build knowledge into their agents, 2) this always helps in the short term, and is 
+personally satisfying to the researcher, but 3) in the long run it plateaus and even inhibits further progress, and 
+4) breakthrough progress eventually arrives by an opposing approach based on scaling computation by search and learning. 
+The eventual success is tinged with bitterness, and often incompletely digested, because it is success over a favored, 
+human-centric approach. 
+[...]
+The second general point to be learned from the bitter lesson is that the actual contents of minds are tremendously, 
+irredeemably complex; we should stop trying to find simple ways to think about the contents of minds, such as simple 
+ways to think about space, objects, multiple agents, or symmetries. All these are part of the arbitrary, intrinsically-complex, 
+outside world. They are not what should be built in, as their complexity is endless; instead we should build in only the 
+meta-methods that can find and capture this arbitrary complexity. Essential to these methods is that they can find good 
+approximations, but the search for them should be by our methods, not by us. We want AI agents that can discover like 
+we can, not which contain what we have discovered. Building in our discoveries only makes it harder to see how the discovering process can be done.
+"
+
+OpenAI abraza esta premisa al máximo con sus modelos GPT: Transformers, aprendizaje auto-supervisado y una tonelada de computo. Y es esto
+lo que sin duda rompe con todo lo que se había visto hasta ahora. 
+
+
+END Tangente. 
+
+
+La llegada de ChatGPT fue la primer señal grande al mundo de que la AI llegó y está para quedarse. 
+Parece que con ChatGPT, OpenAI trajo una revolución. 
+
+Pero es OpenAI el que trajo la revolución? o fueron los que dieron el primer vistaje de que esto era una revolución y en realidad la revolución
+la inició Meta al liberar a Llama-2 y la revolución va a ser llevada a cabo por la comunidad open-source?
+Qué es mejor? qué queremos como sociedad?
+
+Pero OpenAI trajo la verdadera revolución? o fue Meta con Llama2 y la comunidad open-source?
+
+Sin duda OpenAI 
+
+asi como el conocimiento de cómo hacer ChatGPT está / capturado / enjaulado / atrapado / solo en las manos / por OpenAI, 
+mucho del conocimiento del mundo está "atrapado" (no lo podemos obtener) o está detrás de un paywall "pagame y te explico". 
+Esto no es algo nuevo, esto viene desde hace siglos. 
+
+
+Pero qué queremos como sociedad? no nos olvidemos que la historia no terminó (lol a Francis Fukuyama) y que como sociedad
+tenemos que tomar decisiones para orientar hacia dónde vamos, para determinar qué se va a escribir sobre el siglo 21. 
+
+Conrad Gessner (1516-1565), a famous Swiss physician was against the PRINTING PRESS At the time, there were 10,000 book titles published by the printing press.
+This shocked and worried Gessner as he believed that ordinary people could not handle so much knowledge. 
+He demanded European countries to enforce a law that regulates the sale and distribution of books to ordinary people. 
+
+
+Qué está pasando con esto de regular la IA? algo así ya pasó en la historia?
+Si pensamos a la IA como una herramienta que brinda conocimiento a todas las personas, algo así ya ocurrió en el siglo 16 con la 
+creación de la imprenta. Derrepente había una herramienta que podía traer de forma masiva conocimiento a todo individuo. 
+TAL VEZ NO FRAMEARLO CON EL TEMA DE LA REGULACION PROQUE NO VAMOS A HABLAR MUCHO DE ESTO. 
+
+Algo como lo que está por pasar ya pasó en la antiguedad?
+Cuestión que allá por el siglo 15 un alemán llamado Johannes Gutenberg inventó la imprenta para el alfabeto latino y derrepente la cantidad de libros
+en circulación aumentó exponencialmente. La gente tuvo mucho más acceso al conocimiento y que pim que pam, 
+apareció la democracia, el racionalismo, el secularismo, la ciencia y la ilustración. 
+Pero fue tan así la cosa? fue el invento de la imprenta lo que llevó a todos estos logros de la sociedad actual?
+o fue la diseminación de esta tecnología revolucionaria lo que logró esto? qué hubiera pasado si nuestro Johannes
+se hubiera armado un monopolio mundial de la imprenta, bajo la excusa de que era una tecnología demasiado peligrosa
+para que esté en manos de todos?
+Suena similar? cough cough OpenAI. 
+
+
+Quien lidera la revolución? quien inventa la tecnología o quien la / divulga / hace accesible para todos /?
+
+
+
+La prensa de imprimir asustó a muchas personas: la Iglesia católica, los gobernantes del Imperio otomano (que la prohibieron), e incluso este médico suizo.
+Todos temían que los libros fueran demasiado peligrosos para poner en manos del público.
+De alguna manera, todos tenían razón.
+Los libros debilitaron sus poderes al hacer que la gente fuera más inteligente y conocedora.
+El feudalismo, la autocracia, el pensamiento mágico y el dogma religioso rígido fueron eventualmente reemplazados por la democracia, el racionalismo, el secularismo, la ciencia y la Ilustración.
+Y todos estamos mejor por ello.
+
+
+
+George Hotz habla de esto también. Su premisa es la siguiente: Si a la IA pueden acceder solo un grupo reducido de personas, 
+solo la gente "mala" va a acceder a ella. Esto se apoya en la idea de que si la IA está restringida, las únicas personas
+que puedan acceder son las que tienen mucho poder (político, económico, etc) y, debido a los intereses e incentivos de
+los sistemas políticos y económicos actualuales, las personas que tienen mucho poder (osea, las que van a acceder a la IA), 
+son las más psicópatas y turbias, porque tuvieron que desarrollar esas características para llegar a donde están. Osea, 
+algo como que la escalera que te lleva a lo más alto de la política y la economía es un cierto proceso de filtración, 
+donde solo las personas dispuestas a bastantes cosas polémicas llegan, y que además de ser un proceso de filtración, 
+es un proceso de retroalimentación para estos comportamientos psicópatas y turbios. Esta idea está muy bien desarrollada
+por el politólogo Brian Klaas del Colegio Universitario de Londres. (Tiene una charla muy buenaque se llama "Why
+psychopaths rise to power" y sino un libro que se llama "Corruptible: who gets power and how it changes us")
+
+
+
+
+
+
+
+Por último, esta charla trata de nosotros, de cómo nos juntamos un día, reconocimo el potencial de esta nueva tecnología, 
+y empezamos un ping pong de ideas sobre qué área podíamos impactar más con esta nueva tecnología. 
+
+
+cómo un grupo de amigos, se juntó en la casa de uno de ellos a empezar a armar un proyecto que terminó en ALI. 
+
+
+En esta charla, / los fundadores de legalia / X / exploran la nueva revolución de la IA, sus impactos en la sociedad (mmmm), 
+
+
+
+Socrates feared writing … ----------------- CHECK ------------------------
+« Your invention will enable them to hear many things without being properly taught, and they will 
+imagine that they have come to know much while for the most part they will know nothing. »
+
+
+
+
+
+
+History has not ended yet. We are still creating it. We better help to steer it to a good place. 
+
+
+
+
+
+Y si nos convertimos en algo como el printing press shop de la IA?
+After the invention of the printing press, its use started spreading across Europe. By the end of the 15th century, 
+just 50 years after Gutenberg's invention, there were printing shops in more than 200 cities across Europe. 
+These presses produced millions of books, which helped spread knowledge and ideas at an unprecedented rate. 
+This proliferation of printed materials played a significant role in the rise of the Renaissance, the Reformation, and the Scientific Revolution.
+
+
+Y si evaluamos las respuestas que damos en el momento de dar la respuesta? Algo como cuanta atención le prestó al contexto, o cuán 
+relevante es el contexto a la pregunta. Este puntaje podría darlo un LLM y aparecer junto a la respuesta al usuario. 
+Nos serviría para debuggear y nos serviría para informarle al usuario cuán seguros estamos de nuestra respuesta. 
+
+
+Legalia, the new printing press shop of AI. 
+
+
+
+Conocimiento al alcance de la mano: de la imprenta a los GPT
