@@ -247,7 +247,9 @@ september_vars1 <- map(raw_sep, ~ grep("(Pit|Roll|pit|roll)", names(.), value = 
 
 
 december_vars1
+unique(unlist(december_vars1))
 september_vars1
+unique(unlist(september_vars1))
 
 
 december_vars2 <- map(raw_dic, ~ grep("(Mag|mag)", names(.), value = TRUE))
@@ -255,7 +257,13 @@ september_vars2 <- map(raw_sep, ~ grep("(Mag|mag)", names(.), value = TRUE))
 
 
 december_vars2
+unique(unlist(december_vars2))
+
 september_vars2
+unique(unlist(september_vars2))
+
+
+
 
 
 ```
@@ -291,13 +299,8 @@ pitch angle is derived from magnetometer and accelerometer
 
 
 
-
-
 ```{r}
-
-
-# Modify variables to keep as needed
-vars_to_keep_sep <- c(
+vars_to_keep <- c(
   'file_name_original',
   'Acc_x',
   'Acc_y',
@@ -310,35 +313,71 @@ vars_to_keep_sep <- c(
   'Minutes',
   'Seconds',
   'Event.no.',
-  'Behaviours'#,
-  # 'Pitch.angle',
-  # 'Pitch.smoothed.angle',
-  # 'Roll.angle'#,
-  # 'Roll.smoothed.angle'
+  'Behaviours'
 )
 
 
+# select_vars <- function(df) {
+#   select(
+#     df, 
+#     starts_with("Pitch"),
+#     starts_with("Roll"), 
+#     'file_name_original',
+#     'Acc_x',
+#     'Acc_y',
+#     'Acc_z', 
+#     'Mag_x',
+#     'Mag_y',
+#     'Mag_z',
+#     'DateTime', 
+#     'Hours',
+#     'Minutes',
+#     'Seconds',
+#     'Event.no.',
+#     'Behaviours'
+#   )
+# }
 
-# Modify variables to keep as needed
-vars_to_keep_dec <- c(
-  'file_name_original',
-  'Acc_x',
-  'Acc_y',
-  'Acc_z', 
-  'Mag_x',
-  'Mag_y',
-  'Mag_z',
-  'DateTime', 
-  'Hours',
-  'Minutes',
-  'Seconds',
-  'Event.no.',
-  'Behaviours'#,
-  # 'Pitch angle',
-  # 'Pitch.smoothed.angle',
-  # 'Roll angle'#,
-  # 'Roll.smoothed.angle'
-)
+
+# A function to select the appropriate columns if they exist
+select_vars <- function(df) {
+  #' This function checks which of the desired columns exist in each dataframe and selects only those. The
+  #' intersect function is used to identify the common columns between your desired columns and the actual
+  #' columns in each dataframe. Then it combines these with the 'Pitch' and 'Roll' columns identified by 
+  #' pattern matching. The all_of function is used within select to avoid errors when trying to select
+  #'  non-existent columns.
+  
+  cols_to_select <- c(
+    'file_name_original',
+    'Acc_x',
+    'Acc_y',
+    'Acc_z', 
+    'Mag_x',
+    'Mag_y',
+    'Mag_z',
+    'DateTime', 
+    'Hours',
+    'Minutes',
+    'Seconds',
+    'Event.no.',
+    'Behaviours'
+  )
+  
+  existing_cols <- intersect(cols_to_select, names(df))
+  pitch_roll_cols <- grep("Pitch|Roll", names(df), value = TRUE)
+  
+  select(df, all_of(c(existing_cols, pitch_roll_cols)))
+}
+
+
+
+standardize_colnames <- function(df) {
+  colnames(df) <- gsub(" ", ".", colnames(df))
+  return(df)
+}
+
+
+
 
 
 
@@ -350,49 +389,10 @@ raw_data_dic <- dic_paths %>%
     id = "file_name_original",
     col_types = cols()
   ) %>%
-  # Select columns to keep
-  # map(
-  #   ~ try(select(
-  #     .x,
-  #     all_of(vars_to_keep_dec)
-  #   ), silent = TRUE)
-  # ) %>%  
-  # 
-  # Use this if you want to include Pitch Angle and Roll Angle, but you'll have the problem of about 90% of NAs in those variables
-  map(
-    ~ {
-      
-      # print(paste("colnames of dataframe prior to column select:", names(.x)))
-      
-      cols_to_select <- if (all(c("Pitch angle", "Roll angle") %in% names(.x))) {
-        c("Pitch angle", "Roll angle")
-      } else {
-        c("Pitch.angle", "Roll.angle")
-      }
-      
-      # cols_list_dec <<- append(cols_list_dec, list(cols_to_select))
-     
-      # print(paste("TO BE APPENDED COLNAMES", cols_to_select))
-      
-      # print("TTT")
-      # print(names(.x))
-      
-      try(select(
-        .x,
-        c(vars_to_keep_dec, cols_to_select)
-      ), silent = TRUE)
-      
-      # print("GGG")
-      # print(names(.x))
-      # 
-      # 
-      # print(paste("SELECTED COLNAMES: ", c(vars_to_keep_dec, cols_to_select)))
-      # 
-      # print("TEST")
-      # print(names(.x))
-      
-    }
-  ) %>%
+  # standardize colnames
+  map(standardize_colnames) %>% 
+  # Select vars
+  map(select_vars) %>% 
   #Add sheep name column
   map(
     ~ {
@@ -403,11 +403,7 @@ raw_data_dic <- dic_paths %>%
           "ov.."
         )
     ), silent = TRUE)
-
-     # print("TEST2")
-     # print(names(.x))
     }
-
   ) %>% 
   # Add sheep number column
   map(
@@ -451,11 +447,6 @@ raw_data_dic <- dic_paths %>%
         -'DateTime'
     ), silent = TRUE)
 
-
-    # print("DateTime")
-    # print(names(.x))
-
-
     }
   ) %>%
   # Rename all vars to lower-case names to avoid problems
@@ -466,12 +457,6 @@ raw_data_dic <- dic_paths %>%
         tolower
     ), silent = TRUE)
 
-
-
-
-    # print("LOWER CASE")
-    # print(names(.x))
-    
     }
 
   ) %>%
@@ -484,9 +469,6 @@ raw_data_dic <- dic_paths %>%
         as.double
       ), silent = TRUE)
 
-    # print("CONSISTENT CLASSES")
-    # print(names(.x))
-
     }
   ) %>%
   # Add column indicating video name
@@ -498,10 +480,6 @@ raw_data_dic <- dic_paths %>%
           pattern = "video.."
         )
     ), silent = TRUE)
-
-    # print("VIDEO NAME")
-    # print(names(.x))
-
     }
 
   ) %>%
@@ -518,10 +496,6 @@ raw_data_dic <- dic_paths %>%
           )
         )
     ), silent = TRUE)
-      
-    # print("VIDEO NUMBER")
-    # print(names(.x))
-      
     }
   ) %>%
   #Catch the errors
@@ -529,72 +503,10 @@ raw_data_dic <- dic_paths %>%
   # # Bind rows to form a single tibble
   bind_rows %>%
   suppressMessages
-  
-
-# raw_data_dic
-# str(raw_data_dic[1])
-# 
-str(raw_data_dic)
-# 
-# raw_data_dic %>% map(ncol)
-
-```
-
-#WORKS UP TO THE CELL ABOVE
-
-
-```{r}
-
-# Modify variables to keep as needed
-vars_to_keep_sep <- c(
-  'file_name_original',
-  'Acc_x',
-  'Acc_y',
-  'Acc_z', 
-  'Mag_x',
-  'Mag_y',
-  'Mag_z',
-  'DateTime', 
-  'Hours',
-  'Minutes',
-  'Seconds',
-  'Event.no.',
-  'Behaviours'#,
-  # 'Pitch.angle',
-  # 'Pitch.smoothed.angle',
-  # 'Roll.angle'#,
-  # 'Roll.smoothed.angle'
-)
 
 
 
-# Modify variables to keep as needed
-vars_to_keep_dec <- c(
-  'file_name_original',
-  'Acc_x',
-  'Acc_y',
-  'Acc_z', 
-  'Mag_x',
-  'Mag_y',
-  'Mag_z',
-  'DateTime', 
-  'Hours',
-  'Minutes',
-  'Seconds',
-  'Event.no.',
-  'Behaviours'#,
-  # 'Pitch angle',
-  # 'Pitch.smoothed.angle',
-  # 'Roll angle'#,
-  # 'Roll.smoothed.angle'
-)
 
-# cols_list_sep <- list()
-# cols_list_dec <- list()
-
-
-
-# Wrangle September files
 raw_data_sep <- sep_paths %>% 
   # Read files
   map(
@@ -602,365 +514,10 @@ raw_data_sep <- sep_paths %>%
     id = "file_name_original",
     col_types = cols()
   ) %>%
-  # Select columns to keep
-  # map(
-  #   ~ try(select(
-  #     .x,
-  #     vars_to_keep_sep
-  #   ), silent = TRUE)
-  # ) %>% 
-  map(
-    ~ {
-      
-      cols_to_select <- if (all(c("Pitch angle", "Roll angle") %in% names(.x))) {
-        c("Pitch angle", "Roll angle")
-      } else {
-        c("Pitch.angle", "Roll.angle")
-      }
-      
-      # cols_list_sep <<- append(cols_list_sep, list(cols_to_select))
-      
-      try(select(
-        .x,
-        c(vars_to_keep_sep, cols_to_select)
-      ), silent = TRUE)
-      
-      # print(cols_to_select)
-    }
-  ) %>%
-  # Add sheep name column
-  map(
-    ~ try(add_column(
-        .x, 
-        sheep_name = str_extract(
-          .x$file_name_original,
-          "ov.."
-        )
-    ), silent = TRUE)
-  ) %>% 
-  # Add sheep number column 
-  map(
-    ~ try(add_column(
-        .x, 
-        sheep_number = as.double(
-          str_extract(
-            .x$sheep_name,
-            "[0-9]+"
-          )
-        )
-    ), silent = TRUE)
-  ) %>% 
-  # Add Year variable
-  map(
-    ~ try(mutate(
-        .x, 
-        year = year(DateTime)
-    ), silent = TRUE)
-  ) %>% 
-  # Add Month variable
-  map(
-    ~ try(mutate(
-        .x, 
-        month = month(DateTime)
-    ), silent = TRUE)
-  ) %>% 
-  # Add Day variable
-  map(
-    ~ try(mutate(
-        .x, 
-        day = day(DateTime)
-    ), silent = TRUE)
-  ) %>%
-  # Remove DateTime var
-  map(
-    ~ try(select(
-        .x,
-        -'DateTime'
-    ), silent = TRUE)
-  ) %>% 
-  # Rename all vars to lower-case names to avoid problems
-  map(
-    ~ try(rename_all(
-        .x, 
-        tolower
-    ), silent = TRUE)
-  ) %>% 
-  # Add column indicating video name
-  map(
-    ~ try(mutate(
-        .x,
-        video_name = str_extract(
-          .x$file_name_original, 
-          pattern = "video.."
-        )
-    ), silent = TRUE)
-  ) %>% 
-  # Add column indicating video number
-  map(
-    ~ try(mutate(
-        .x, 
-        video_number = as.double(
-          str_extract(
-            .x$video_name, 
-            pattern = "[0-9]+"
-          ) 
-        )  
-    ), silent = TRUE)
-  ) %>% 
-  # Bind rows to form a single tibble
-  bind_rows %>%
-  suppressMessages
-  
-
-
-# Wrangle December files
-## December files have some problems where a few variables don't have consistent classes
-## across files. We will have to add a few steps to correct this. 
-
-# UPDATE: Added try() statements in order to skip the failing dataframes (those without magnetometer data or any other data). 
-
-raw_data_dic <- dic_paths %>% 
-  # Read files
-  map(
-    read_csv, 
-    id = "file_name_original",
-    col_types = cols()
-  ) %>%
-  # Select columns to keep
-  # map(
-  #   ~ try(select(
-  #     .x,
-  #     all_of(vars_to_keep_dec)
-  #   ), silent = TRUE)
-  # ) %>%  
-  # 
-  # Use this if you want to include Pitch Angle and Roll Angle, but you'll have the problem of about 90% of NAs in those variables
-  map(
-    ~ {
-      
-      print(paste("colnames of dataframe prior to column select:", names(.x)))
-      
-      cols_to_select <- if (all(c("Pitch angle", "Roll angle") %in% names(.x))) {
-        c("Pitch angle", "Roll angle")
-      } else {
-        c("Pitch.angle", "Roll.angle")
-      }
-      
-      # cols_list_dec <<- append(cols_list_dec, list(cols_to_select))
-     
-      print(paste("TO BE APPENDED COLNAMES", cols_to_select))
-      
-      print("TTT")
-      print(names(.x))
-      
-      try(select(
-        .x,
-        c(vars_to_keep_dec, cols_to_select)
-      ), silent = TRUE)
-      
-      print("GGG")
-      print(names(.x))
-      
-      
-      print(paste("SELECTED COLNAMES: ", c(vars_to_keep_dec, cols_to_select)))
-      
-      print("TEST")
-      print(names(.x))
-      
-    }
-  ) #%>%
-  # Add sheep name column
-  # map(
-  #   ~ {
-  #     try(add_column(
-  #       .x, 
-  #       sheep_name = str_extract(
-  #         .x$file_name_original,
-  #         "ov.."
-  #       )
-  #   ), silent = TRUE)
-  #   
-  #    print("TEST2") 
-  #    print(names(.x))
-  #   }  
-  #     
-  # ) %>% 
-  # # Add sheep number column 
-  # map(
-  #   ~ try(add_column(
-  #       .x, 
-  #       sheep_number = as.double(
-  #         str_extract(
-  #           .x$sheep_name,
-  #           "[0-9]+"
-  #         )
-  #       )
-  #   ), silent = TRUE)
-  # ) %>% 
-  # # Add Year variable
-  # map(
-  #   ~ try(mutate(
-  #       .x, 
-  #       year = year(DateTime)
-  #   ), silent = TRUE)
-  # ) %>% 
-  # # Add Month variable
-  # map(
-  #   ~ try(mutate(
-  #       .x, 
-  #       month = month(DateTime)
-  #   ), silent = TRUE)
-  # ) %>% 
-  # # Add Day variable
-  # map(
-  #   ~ try(mutate(
-  #       .x, 
-  #       day = day(DateTime)
-  #   ), silent = TRUE)
-  # ) %>%
-  # # Remove DateTime var
-  # map(
-  #   ~ {
-  #     try(select(
-  #       .x,
-  #       -'DateTime'
-  #   ), silent = TRUE)
-  #   
-  #     
-  #   print("DateTime")  
-  #   print(names(.x))
-  #     
-  #      
-  #   }
-  # ) %>% 
-  # # Rename all vars to lower-case names to avoid problems
-  # map(
-  #   ~ {
-  #     try(rename_all(
-  #       .x, 
-  #       tolower
-  #   ), silent = TRUE)
-  #     
-  #  
-  #   
-  #   
-  #   print("LOWER CASE")  
-  #   print(names(.x))
-  #   } 
-  #   
-  # ) %>% 
-  # # Coerce to consistent classes
-  # map(
-  #   {
-  #   ~ try(mutate_at(
-  #       .x,
-  #       c('hours', 'minutes', 'seconds'),
-  #       as.double
-  #     ), silent = TRUE)
-  #     
-  #   print("CONSISTENT CLASSES")  
-  #   print(names(.x))
-  #     
-  #   }
-  # ) %>%  
-  # # Add column indicating video name
-  # map(
-  #   ~ {try(mutate(
-  #       .x,
-  #       video_name = str_extract(
-  #         .x$file_name_original, 
-  #         pattern = "video.."
-  #       )
-  #   ), silent = TRUE)
-  #   
-  #   print("VIDEO NAME")  
-  #   print(names(.x))
-  #   
-  #   }
-  #   
-  # ) %>% 
-  # # Add column indicating video number
-  # map(
-  #   ~ {
-  #     
-  #     try(mutate(
-  #       .x, 
-  #       video_number = as.double(
-  #         str_extract(
-  #           .x$video_name, 
-  #           pattern = "[0-9]+"
-  #         ) 
-  #       )
-  #   ), silent = TRUE)
-  #   print("VIDEO NUMBER")  
-  #   print(names(.x))
-  #   }
-  #   
-  # ) %>%
-  # Catch the errors
-  # map(~ if (inherits(.x, "try-error")) NULL else .x) %>% 
-  # # Bind rows to form a single tibble
-  # bind_rows %>% 
-  # suppressMessages
-  
-
-
-```
-
-
-THIS DOESN't WORK
-```{r}
-
-raw_data_dic <- dic_paths %>% 
-  # Read files
-  map(
-    read_csv, 
-    id = "file_name_original",
-    col_types = cols()
-  ) %>%
-  # Select columns to keep
-  # map(
-  #   ~ try(select(
-  #     .x,
-  #     all_of(vars_to_keep_dec)
-  #   ), silent = TRUE)
-  # ) %>%  
-  # 
-  # Use this if you want to include Pitch Angle and Roll Angle, but you'll have the problem of about 90% of NAs in those variables
-  map(
-    ~ {
-      
-      # print(paste("colnames of dataframe prior to column select:", names(.x)))
-      
-      cols_to_select <- if (all(c("Pitch angle", "Roll angle") %in% names(.x))) {
-        c("Pitch angle", "Roll angle")
-      } else {
-        c("Pitch.angle", "Roll.angle")
-      }
-      
-      # cols_list_dec <<- append(cols_list_dec, list(cols_to_select))
-     
-      # print(paste("TO BE APPENDED COLNAMES", cols_to_select))
-      
-      # print("TTT")
-      # print(names(.x))
-      
-      try(select(
-        .x,
-        c(vars_to_keep_dec, cols_to_select)
-      ), silent = TRUE)
-      
-      # print("GGG")
-      # print(names(.x))
-      # 
-      # 
-      # print(paste("SELECTED COLNAMES: ", c(vars_to_keep_dec, cols_to_select)))
-      # 
-      # print("TEST")
-      # print(names(.x))
-      
-    }
-  ) %>%
+  # standardize colnames
+  map(standardize_colnames) %>% 
+  # Select vars
+  map(select_vars) %>% 
   #Add sheep name column
   map(
     ~ {
@@ -971,11 +528,7 @@ raw_data_dic <- dic_paths %>%
           "ov.."
         )
     ), silent = TRUE)
-
-     # print("TEST2")
-     # print(names(.x))
     }
-
   ) %>% 
   # Add sheep number column
   map(
@@ -1019,11 +572,6 @@ raw_data_dic <- dic_paths %>%
         -'DateTime'
     ), silent = TRUE)
 
-
-    # print("DateTime")
-    # print(names(.x))
-
-
     }
   ) %>%
   # Rename all vars to lower-case names to avoid problems
@@ -1034,12 +582,6 @@ raw_data_dic <- dic_paths %>%
         tolower
     ), silent = TRUE)
 
-
-
-
-    # print("LOWER CASE")
-    # print(names(.x))
-    
     }
 
   ) %>%
@@ -1052,9 +594,6 @@ raw_data_dic <- dic_paths %>%
         as.double
       ), silent = TRUE)
 
-    # print("CONSISTENT CLASSES")
-    # print(names(.x))
-
     }
   ) %>%
   # Add column indicating video name
@@ -1066,10 +605,6 @@ raw_data_dic <- dic_paths %>%
           pattern = "video.."
         )
     ), silent = TRUE)
-
-    # print("VIDEO NAME")
-    # print(names(.x))
-
     }
 
   ) %>%
@@ -1086,10 +621,6 @@ raw_data_dic <- dic_paths %>%
           )
         )
     ), silent = TRUE)
-      
-    # print("VIDEO NUMBER")
-    # print(names(.x))
-      
     }
   ) %>%
   #Catch the errors
@@ -1097,74 +628,48 @@ raw_data_dic <- dic_paths %>%
   # # Bind rows to form a single tibble
   bind_rows %>%
   suppressMessages
-  
 
-raw_data_dic
-# str(raw_data_dic[1])
-# 
-str(raw_data_dic)
-# 
-# raw_data_dic %>% map(ncol)
+
+
 ```
-# UPDATE: the one above works but note that there's NAs produced in pitch angle and roll angle. 
 
 
-THIS WORKS
+
+
 ```{r}
 
-raw_data_dic <- dic_paths %>% 
-  # Read files
-  map(
-    read_csv, 
-    id = "file_name_original",
-    col_types = cols()
-  ) %>%
-  # Select columns to keep
-  # map(
-  #   ~ try(select(
-  #     .x,
-  #     all_of(vars_to_keep_dec)
-  #   ), silent = TRUE)
-  # ) %>%  
-  # 
-  # Use this if you want to include Pitch Angle and Roll Angle, but you'll have the problem of about 90% of NAs in those variables
-  map(
-    ~ {
-      
-      print(paste("colnames of dataframe prior to column select:", names(.x)))
-      
-      cols_to_select <- if (all(c("Pitch angle", "Roll angle") %in% names(.x))) {
-        c("Pitch angle", "Roll angle")
-      } else {
-        c("Pitch.angle", "Roll.angle")
-      }
-      
-      # cols_list_dec <<- append(cols_list_dec, list(cols_to_select))
-     
-      print(paste("TO BE APPENDED COLNAMES", cols_to_select))
-      
-      print("TTT")
-      print(names(.x))
-      
-      try(select(
-        .x,
-        c(vars_to_keep_dec, cols_to_select)
-      ), silent = TRUE)
-      
-      # print("GGG")
-      # print(names(.x))
-      # 
-      # 
-      # print(paste("SELECTED COLNAMES: ", c(vars_to_keep_dec, cols_to_select)))
-      # 
-      # print("TEST")
-      # print(names(.x))
-      
-    }
-  )  
 
+check_na_percentage <- function(df) {
+  nas <- colSums(is.na(df))
+  
+  return(nas / nrow(df) * 100)
+}
+
+
+check_na_percentage(raw_data_dic)
+check_na_percentage(raw_data_sep)
+
+
+
+
+clean_data <- bind_rows(
+  raw_data_dic, 
+  raw_data_sep
+) %>% 
+  select(-pitch.smoothed.angle, -roll.smoothed.angle)
+
+
+check_na_percentage(clean_data)
+#  
+# 
+# print("Amount of NAs in each column")
+# nas <- colSums(is.na(clean_data)) %>% print()
+# 
+# print("Percentage of NAs relative to total rows in dataset")
+# nas / nrow(clean_data) * 100 
 
 ```
+
 
 
 
