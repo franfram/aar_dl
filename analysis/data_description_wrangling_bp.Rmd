@@ -634,11 +634,24 @@ raw_data_sep <- sep_paths %>%
 ```
 
 
+Now we have the datasets cleaned:
+
+-   September data
+```{r}
+# reactable(raw_data_sep)
 
 
+```
+
+-   December data
 ```{r}
 
+# reactable(raw_data_dic)
 
+```
+
+Now we will merge both datasets, and check which columns contain NAs
+```{r}
 check_na_percentage <- function(df) {
   nas <- colSums(is.na(df))
   
@@ -673,79 +686,18 @@ check_na_percentage(clean_data)
 
 
 
-
-```{r}
-raw_data_dic %>% map(colnames)
-
-
-str(raw_data_dic[1])
-
-raw_data_dic[1]
-```
-
-
-```{r}
-raw_data_sep %>% colnames
-
-
-raw_data_dic %>% colnames
-
-
-
-all("pitch.angle" %in% names(raw_data_sep), FALSE)
-?all
-```
-
-
-
-
-Now we have the datasets cleaned:
-
--   September data
-```{r}
-# reactable(raw_data_sep)
-
-
-```
-
--   December data
-```{r}
-
-# reactable(raw_data_dic)
-
-```
-
-Now we will merge both datasets, and check which columns contain NAs
-
-```{r}
-clean_data <- bind_rows(
-  raw_data_dic, 
-  raw_data_sep
-) 
- 
-
-print("Amount of NAs in each column")
-nas <- colSums(is.na(clean_data)) %>% print()
-
-print("Percentage of NAs relative to total rows in dataset")
-nas / nrow(clean_data) * 100 
-
-
-```
-
-
-
 We can see that only the 'behaviours' column contain NAs and they amount to\
-about 5% of the entries.
+about 5% of the entries. (update: also mag_* contain ~1.2% NAs)
 
 We will remove this NAs for the time being, but we will check this again later.\
 We will also change the order of the columns and arrange the dataset.
+Update: We are no longer dropping NAs, because that will break our 6.4s "mini-time-series"
 
 ```{r}
 
 clean_data <- clean_data %>% 
-  # Remove rows containing NAs
-  drop_na %>% 
+  # # Remove rows containing NAs
+  # drop_na %>% # removed this to avoid disrupting the "mini-time-series"
   # Change order of columns
   select(
     'sheep_name', 
@@ -763,6 +715,8 @@ clean_data <- clean_data %>%
     'mag_x', 
     'mag_y',
     'mag_z', 
+    'pitch.angle', 
+    'roll.angle',
     'behaviours',
     'video_name', 
     'video_number',
@@ -812,6 +766,20 @@ clean_data <- clean_data %>%
   )
 
 ```
+
+
+## This data will be stored and then processed in python
+```{r}
+write_csv(clean_data, here("data", "clean_sheep_data_2019.csv"))
+
+
+```
+
+
+
+
+
+
 
 We will check if in fact there's 40 records per second, as the Daily Diaries\
 are supposed to work.
