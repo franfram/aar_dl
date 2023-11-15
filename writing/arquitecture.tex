@@ -302,6 +302,7 @@ m n o p
 After 2x2 max pooling with stride of 2:
 f g
 n o
+
 ```'''
 
 
@@ -523,8 +524,6 @@ In a scientific context, each layer and the number of units should be justified 
 
 Abstract: 
 
-
-
 last draft: 
 Las redes neuronales son revolucionarias, hoy en día esto es evidente.
 Como lo demostró el Teorema Universal de Aproximación, una red neuronal con suficiente cómputo puede aproximar cualquier función, y en este mundo TODA acción, fenómeno o conocimiento se puede representar con una función. Eso quiere decir que las redes neuronales pueden potencialmente hacerlo todo.
@@ -594,12 +593,12 @@ Cuestiones a notar: GPT no implica OpenAI, importancia del trabajo colectivo ope
 Por qué las redes neuronales son revolucionarias?
 Todo se apoya en el Teorema Universal de Aproximación, que prueba que si 
 tenemos una red neuronal con ciertas características y con suficientes datos, 
-aproximar cualquier función. Y? por qué es importante esto? qué vieron los partidarios del 
+podemos aproximar cualquier función. Y? por qué es importante esto? qué vieron los partidarios del 
 deep learning hace más de 30 años? La cuestión reside en que TODO lo que ocurre en el mundo
 se puede representar como una función. Gran parte de la ciencia es encontrar la función que describe un
 fenómeno determinado. Pero estamos limitados a tener que describir explícitamente esa función. 
 Y eso es una enorme limitación. Cuál es la función que describe la traducción de un lenguaje a otro?
-cuál es la función para manejar un auto? cuál es la función que convierte señales cerebrales a inputs
+cuál es la función para manejar un auto? cuál es la función que convierte señales cerebrales a instrucciones
 en una computadora? No tenemos idea y capaz que nunca podamos describir esas funciones en papel. 
 Pero derrepente, según prueba el Teorema Universal de Aproximación, tenemos un aparato matemático y
 computacional que puede encontrar estas funciones. Eso quiere decir que potencialmente, las redes 
@@ -609,18 +608,28 @@ de cómputo. Las primeras redes neuronales que empezaron a resolver problemas gr
 aproximadamente 10 años, con lo que se conoce como aprendizaje supervisado. Agarramos los datos de
 input (e.g., imágenes), los datos de output (e.g., texto que describa el contenido de la imagen) y 
 lanzamos un proceso de optimización para encontrar la función que mapea los inputs con los outputs. 
-Esto funciona pero tiene grandes problemas, como la necesidad de tener un montón de datos, porque estas redes
-con este enfoque de aprendizaje no puede aprender nada que no vieron. 
-Esto en parte se empieza a resolver con algo que se llama aprendizaje auto-supervisado, o dicho / en criollo / sencillamente /, 
-/"completame lo que falta" / "fill in the gap"/. Esta estrategia es muy simple y resuelve en gran parte la necesidad de tener datos
+Esto funciona pero tiene grandes problemas. Uno de ellos es que las redes no pueden inferir nada que no hayan visto antes, por lo que necesitan un montón de datos para entrenar. 
+Por ejemplo, aprenden qué es un caballo, luego aprenden qué es el color violeta. Ahora, les mostrás un caballo violeta y no tienen
+idea de lo que están viendo. Esto hace que necesitemos un set de datos enorme (que incluya caballos violetas obviamente) para que nuestra red
+sea lo más general posible. 
+Yann LeCun, uno de los padres del apredizaje automático, lo resume muy bien: "supervised learning sucks".
+Esto en parte se empieza a resolver con algo que se llama aprendizaje auto-supervisado, o dicho en criollo, 
+"completame lo que falta". Esta estrategia es muy simple y resuelve en gran parte la necesidad de tener datos
 anotados. La cuestión es que completar lo que falta, tarea que parece facil, requiere de entender como funcionan las cosas. 
-Porque por ejemplo, completar la frase / "the cat is under the __" / "me voy a ir a la cama a ___" (dormir) / no parece tan dificil. 
-Pero que pasa si lo que hay que completar es un problema matematico, como por ejemplo "\sqrt[3]{27} = ___". Derrepente esto 
+Porque por ejemplo, completar la frase / "the cat is under the __" (table) / "me voy a ir a la cama a ___" (dormir) / no parece tan dificil. 
+Pero que pasa si lo que hay que completar es un problema matemático, como por ejemplo "\sqrt[3]{27} = ___". Derrepente esto 
 no es tan fácil. Esto requiere que la red neuronal cree una especie de "modelo mental" de cómo funciona la matemática. 
+Fast forward 30 de noviembre 2022. Sale ChatGPT. El modelo de OpenAI entrenado usando aprendizaje auto-supervisado y una cantidad de 
+computo masiva (bitter lesson de Rich Sutton., i.e., no hay que enseñarle a las redes, la redes tienen que aprender solas). 
+
+OpenAI abraza esta premisa al máximo con sus modelos GPT: Transformers, aprendizaje auto-supervisado y una tonelada de computo. Y es esto
+lo que sin duda rompe con todo lo que se había visto hasta ahora. 
+
+((((
 Esto lo logra la red neuronal durante el entrenamiento, es como un objeto matemático y computacional que muta y se modifica para poder
 encontrar la funcion que describa este aparente razonamiento. Primer señal de que hay algo emergente ahí, acaso empezó a emerger el razonamiento?
-Fast forward 30 de noviembre 2022. Sale ChatGPT. El modelo de OpenAI entrenado usando aprendizaje auto-supervisado y una cantidad de 
-computo masiva (bitter lesson de Rich Sutton). 
+))))
+
 
 START Tangente:
 Gran parte de la historia del AI se basó en investigadores y desarolladores que querían enseñarle a la máquina, inyectarles el conocimiento. 
