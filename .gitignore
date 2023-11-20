@@ -14,7 +14,7 @@ analysis/*_cache
 analysis/site_libs
 docs/figure
 docs/*png
-data/
+data/*
 output/
 _targets/meta/process
 _targets/meta/process
