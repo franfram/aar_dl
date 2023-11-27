@@ -1,0 +1,7 @@
+pandas
+numpy
+pyprojroot
+sklearn
+typing
+itertools
+tensorflow

@@ -781,6 +781,58 @@ write_csv(clean_data, here("data", "clean_sheep_data_2019.csv"))
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 We will check if in fact there's 40 records per second, as the Daily Diaries\
 are supposed to work.
 
