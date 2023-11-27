@@ -3,20 +3,6 @@ import numpy as np
 from typing import List, Dict, Tuple, Union
 from itertools import product
 
-def get_unique_values(df: pd.DataFrame) -> dict:
-    """
-    Get unique values in each column of a DataFrame.
-
-    Parameters:
-    - df (pd.DataFrame): The DataFrame to process.
-
-    Returns:
-    - dict: A dictionary with column names as keys and unique values as values.
-    """
-    unique_values = {col: df[col].unique() for col in df.columns}
-    return unique_values
-
-
 
 
 # def filter_and_merge_behaviours(df: pd.DataFrame, behaviours_to_keep: list) -> pd.DataFrame:
