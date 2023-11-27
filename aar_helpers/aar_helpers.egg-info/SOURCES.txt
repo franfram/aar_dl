@@ -2,4 +2,5 @@ setup.py
 aar_helpers.egg-info/PKG-INFO
 aar_helpers.egg-info/SOURCES.txt
 aar_helpers.egg-info/dependency_links.txt
+aar_helpers.egg-info/requires.txt
 aar_helpers.egg-info/top_level.txt
