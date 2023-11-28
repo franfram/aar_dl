@@ -189,7 +189,7 @@ def extract_consecutive_segments(df: pd.DataFrame, allowed_behaviours: List[str]
 
 
 
-def extract_all_segments(df: pd.DataFrame, behaviour_threshold: List = [51], segment_size: List = [32, 64, 128, 256], sequence_length: List = [5, 10, 15, 20]) -> Dict[str, Dict[str, Dict[str, Union[int, List[pd.DataFrame]]]]]:
+def extract_all_segments(df: pd.DataFrame, behaviour_threshold: List = [51], segment_size: List = [32, 64, 128, 256], sequence_length: List = [5, 10, 15, 20], move_window_by: str = 'segment') -> Dict[str, Dict[str, Dict[str, Union[int, List[pd.DataFrame]]]]]:
     """
     Extract sequences of segments for all unique sheep in the dataframe, given a combination of `behaviour_threshold`, 
     `segment_size`, and `sequence_length`.
@@ -234,7 +234,7 @@ def extract_all_segments(df: pd.DataFrame, behaviour_threshold: List = [51], seg
               #print(f"month: {month}")
               
 
-              sequences.extend(extract_consecutive_segments(df, sheep, month, behaviour_threshold, segment_size, sequence_length))
+              sequences.extend(extract_consecutive_segments(df, sheep, month, behaviour_threshold, segment_size, sequence_length, move_window_by = move_window_by))
 
               all_segments[sheep] = {
                   'sequences': sequences, 
