@@ -1,3 +1,7 @@
+
+
+#import cudf as pd
+#import cupy as np
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Tuple, Union
@@ -5,69 +9,117 @@ from itertools import product
 
 
 
-# def filter_and_merge_behaviours(df: pd.DataFrame, behaviours_to_keep: list) -> pd.DataFrame:
-def filter_data_and_merge_behaviours(df: pd.DataFrame) -> pd.DataFrame:
+
+def get_unique_values(df: pd.DataFrame) -> dict:
     """
-    This function takes a DataFrame and:
-    1. Unifies values in the `sheep_name` column
-    2. Filters out the extreme values of `pitch.angle` and `roll.angle` based on the IQR method. 
-    3. Replaces NaN values in the `behaviour` column with the label `Unknown`. 
-    4. Computes behaviours according to https://arxiv.org/pdf/2105.11490.pdf, i.e., the possible behaviours are  (i)Inactive (when the animal is still: resting or vigilant), (ii) Walk (normal walking speed with the head raised), (iii) Fast Walk (when the animal runs or moves fast) and (iv) Foraging (when the animal eats or looks for food. This can involve some walking but it is slow and with the head down). But we add the modification of `fast_walk` and `walk` are now `Walking`. 
-    
+    Get unique values in each column of a DataFrame.
+
     Parameters:
-    - df: A pandas DataFrame containing a 'behaviours' column
-    
+    - df (pd.DataFrame): The DataFrame to process.
+
     Returns:
-    - A modified DataFrame. 
+   - dict: A dictionary with column names as keys and unique values as values.
     """
-
-    # Replace 'fast_walk' with 'walk' in the 'behaviours' column
-    # Replace 'ov*b' with 'ov*'
-    df['sheep_name'] = df['sheep_name'].replace('ov1b', 'ov1.')
-    df['sheep_name'] = df['sheep_name'].replace('ov6b', 'ov6.')
+    unique_values = {col: df[col].unique() for col in df.columns}
+    return unique_values
 
 
-    # Compute IQR for pitch.angle and roll.angle
-    q1_pitch = df['pitch.angle'].quantile(0.25)
-    q3_pitch = df['pitch.angle'].quantile(0.75)
-    iqr_pitch = q3_pitch - q1_pitch
-    q1_roll = df['roll.angle'].quantile(0.25)
-    q3_roll = df['roll.angle'].quantile(0.75)
-    iqr_roll = q3_roll - q1_roll
+def replace_sheep_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Replace specific values in the 'sheep_name' column.
 
-    # Determine bounds for pitch.angle and roll.angle
-    lower_bound_pitch = q1_pitch - 1.5 * iqr_pitch
-    upper_bound_pitch = q3_pitch + 1.5 * iqr_pitch
-    lower_bound_roll = q1_roll - 1.5 * iqr_roll
-    upper_bound_roll = q3_roll + 1.5 * iqr_roll
+    - df (pd.DataFrame): The DataFrame to process.
 
-    # Filter out outliers
-    df['pitch.angle'] = df[(df['pitch.angle'] >= lower_bound_pitch) & (df['pitch.angle'] <= upper_bound_pitch)]['pitch.angle']
-    df['roll.angle'] = df[(df['roll.angle'] >= lower_bound_roll) & (df['roll.angle'] <= upper_bound_roll)]['roll.angle']
+    Returns:
+    - pd.DataFrame: The DataFrame with replaced values in the 'sheep_name' column.
+    """
+    replacements = {'ov1b': 'ov1.', 'ov6b': 'ov6.'}
+    df['sheep_name'] = df['sheep_name'].replace(replacements)
+    return df
 
-    
-    # Transform from degrees to radians
-    df['pitch.angle'] = np.radians(df['pitch.angle'])
-    df['roll.angle'] = np.radians(df['roll.angle'])
-    
+def filter_outliers(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+    """
+    Filter out outliers in specified columns based on the IQR method.
 
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to process.
+    - columns (List[str]): The columns to filter.
 
-    # Replace NaN values in the `behaviour` column with the label `Unknown`
+    Returns:
+    - pd.DataFrame: The DataFrame with outliers filtered out.
+    """
+    for column in columns:
+        q1 = df[column].quantile(0.25)
+        q3 = df[column].quantile(0.75)
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        df = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+    return df
+
+def transform_angles(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+    """
+    Transform specified columns from degrees to radians.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to process.
+    - columns (List[str]): The columns to transform.
+
+    Returns:
+    - pd.DataFrame: The DataFrame with transformed columns.
+    """
+    df[columns] = np.radians(df[columns])
+    return df
+
+def replace_nan_behaviours(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Replace NaN values in the 'behaviours' column with the label 'Unknown'.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to process.
+
+    Returns:
+    - pd.DataFrame: The DataFrame with NaN values replaced.
+    """
     df['behaviours'] = df['behaviours'].fillna('Unknown')
+    return df
 
-    # Compute behaviours according to https://arxiv.org/pdf/2105.11490.pdf but with a Mod of `fast_walk` and `walk` are now `walking`
-    ## Inactive
-    df['behaviours'] = df['behaviours'].replace('resting', 'Inactive')
-    df['behaviours'] = df['behaviours'].replace('vigilance', 'Inactive')
+def compute_behaviours(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute behaviours according to a specific rule.
 
-    ## Walking
-    df['behaviours'] = df['behaviours'].replace('fast_walk', 'Walking')
-    df['behaviours'] = df['behaviours'].replace('walk', 'Walking')
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to process.
 
-    ## Foraging
-    df['behaviours'] = df['behaviours'].replace('eating', 'Foraging')
-    df['behaviours'] = df['behaviours'].replace('search', 'Foraging')
+    Returns:
+    - pd.DataFrame: The DataFrame with computed behaviours.
+    """
+    replacements = {
+        'resting': 'Inactive',
+        'vigilance': 'Inactive',
+        'fast_walk': 'Walking',
+        'walk': 'Walking',
+        'eating': 'Foraging',
+        'search': 'Foraging'
+    }
+    df['behaviours'] = df['behaviours'].replace(replacements)
+    return df
 
+def transform_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Apply a series of transformations to a DataFrame.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame to process.
+
+    Returns:
+    - pd.DataFrame: The transformed DataFrame.
+    """
+    df = replace_sheep_names(df)
+    df = filter_outliers(df, ['pitch.angle', 'roll.angle'])
+    df = transform_angles(df, ['pitch.angle', 'roll.angle'])
+    df = replace_nan_behaviours(df)
+    df = compute_behaviours(df)
     return df
 
 
@@ -75,7 +127,7 @@ def filter_data_and_merge_behaviours(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # Function to extract consecutive segments
-def extract_consecutive_segments(df: pd.DataFrame, allowed_behaviours: List[str], sheep_name: str, month: int, behaviour_threshold: int=51, segment_size: int=256, sequence_length: int=5) -> List[pd.DataFrame]:
+def extract_consecutive_segments(df: pd.DataFrame, allowed_behaviours: List[str], sheep_name: str, month: int, behaviour_threshold: int=51, segment_size: int=256, sequence_length: int=5, move_window_by: str = 'segment') -> List[pd.DataFrame]:
     """
         Extracts sequences of consecutive segments of continuous data for a **specified sheep and month**,
     ensuring each segment in the sequence has at least a certain percentage of the same behaviour.
@@ -83,37 +135,39 @@ def extract_consecutive_segments(df: pd.DataFrame, allowed_behaviours: List[str]
     
     Parameters:
         - df: The DataFrame containing the sheep movement data.
-        - allowed_behaviours: The behaviours that are allowed in the sequences of segments, e.g. ['walk', 'eating', 'resting'].
+        - allowed_behaviours: The behaviours that are allowed in the sequences of segments, e.g. ['Inactive', 'Walking', 'Foraging'].
         - sheep_name: The name of the sheep to filter the data.
         - month: The month to filter the data.
         - behaviour_threshold: The minimum percentage of rows with the same behaviour in each segment.
         - segment_size: The number of rows in each segment (default is 256 for 6.4s of data at 40Hz).
         - sequence_length: The number of consecutive segments in each sequence.
+        - move_window_by: The unit to move the window by when extracting segments, either 'segment', 'fraction' or 'row'. Function speeds up when moving by 'segment' compared to 'fraction' or 'row', but number of sequences extracted is (expectedly) lower.
         
     Returns:
         - A list of DataFrames, each containing a sequence of consecutive segments of data for the specified
           sheep and month with the behaviour meeting the threshold, and a new column for the majority behaviour.
     """
 
-    try: 
-        value = allowed_behaviours
-    except NameError:
-        print("`allowed_behaviours` is not defined, please pass it as an argument")
-    
 
     # Filter the DataFrame based on the sheep_name and month. Filtering by the month is important to keep the temporal order, but not for differentiating between months like with sheep
-    filtered_df = df[(df['sheep_name'] == sheep_name) & (df['month'] == month)].reset_index(drop=True)
+    filtered_df = df.query("`sheep_name` == @sheep_name and `month` == @month").reset_index(drop=True)
 
     sequences = []
     i = 0
-    
+
+    increments = {'segment': segment_size, 'franction': round(segment_size / 10), 'row': 1}
+    increment = increments.get(move_window_by)
+    if increment is None: 
+        raise ValueError("Invalid value for `move_window_by`. Must be one of 'segment', 'fraction', or 'row'.")
+
     while i < len(filtered_df) - segment_size * sequence_length:
         sequence = filtered_df.iloc[i : i + segment_size * sequence_length].copy()  
         
         # Split the sequence into segments and validate each segment
         segments = [sequence.iloc[j*segment_size : (j+1)*segment_size].copy() for j in range(sequence_length)]
         valid_sequence = all(
-            segment['behaviours'].value_counts(normalize=True).iloc[0] * 100 >= behaviour_threshold
+            #segment['behaviours'].value_counts(normalize=True).iloc[0] * 100 >= behaviour_threshold
+            segment['behaviours'].value_counts(normalize=True).index[0] in allowed_behaviours and segment['behaviours'].value_counts(normalize=True).iloc[0] * 100 >= behaviour_threshold[0]
             for segment in segments
         )
         
@@ -126,8 +180,8 @@ def extract_consecutive_segments(df: pd.DataFrame, allowed_behaviours: List[str]
             sequences.append(pd.concat(segments, ignore_index=True))
             i += segment_size * sequence_length  # Move to the next non-overlapping sequence
         else:
-            i += segment_size  # Move by one segment and try again
-    
+            i += increment
+
     return sequences
 
 
@@ -137,8 +191,6 @@ def extract_consecutive_segments(df: pd.DataFrame, allowed_behaviours: List[str]
 
 def extract_all_segments(df: pd.DataFrame, behaviour_threshold: List = [51], segment_size: List = [32, 64, 128, 256], sequence_length: List = [5, 10, 15, 20]) -> Dict[str, Dict[str, Dict[str, Union[int, List[pd.DataFrame]]]]]:
     """
-    UPDATE: extend to combinations of behaviour_threshold, segment_size, and sequence_length
-
     Extract sequences of segments for all unique sheep in the dataframe, given a combination of `behaviour_threshold`, 
     `segment_size`, and `sequence_length`.
     
@@ -178,8 +230,8 @@ def extract_all_segments(df: pd.DataFrame, behaviour_threshold: List = [51], seg
         for sheep in df['sheep_name'].unique(): 
             sequences = []
             for month in df['month'].unique(): 
-              print(f"sheep: {sheep}")
-              print(f"month: {month}")
+              #print(f"sheep: {sheep}")
+              #print(f"month: {month}")
               
 
               sequences.extend(extract_consecutive_segments(df, sheep, month, behaviour_threshold, segment_size, sequence_length))
@@ -194,9 +246,39 @@ def extract_all_segments(df: pd.DataFrame, behaviour_threshold: List = [51], seg
     
         if full_data.get(segments_key) == None:
             full_data.update({segments_key: all_segments})
-            full_data.update({segments_key_NoAcc: all_segments})
+            full_data.update({segments_key_NoAcc: all_segments}) # Acc data will be removed downstream
         else:
             print("There might be a problem")
-    
 
     return full_data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def data_pipeline():
+    None 
+
+
+    return
