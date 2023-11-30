@@ -2,11 +2,11 @@
 #import cupy as np
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Any
 from itertools import product
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
-
+from pyprojroot.here import here
 
 
 def get_unique_values(df: pd.DataFrame) -> dict:
@@ -247,17 +247,12 @@ def extract_all_segments(df: pd.DataFrame, allowed_behaviours: List[str] = ['Ina
 
     return full_data
 
-
-
-
-
 def check_for_nans(arr, label):
     if np.isnan(np.array(arr)).any():
         print(f"NaNs detected in {label}")
 
-
-
 "MUST THOROUGHLY CHECK THIS FUNCTION TO DETERMINE THE CAUSE OF THE SHAPE MISMATCHES"
+"MUST REFACTOR THIS FUNCTION, LOOKS LIKE SH!T"
 def prepare_training_data(
     all_segments: Dict[str, Dict[str, Union[int, List[pd.DataFrame]]]], 
     sequence_length: int, 
@@ -397,15 +392,62 @@ def prepare_training_data(
     
     return x_data, y_data, behaviour_mapping
 
+def compute_behaviour_distribution(): 
+    None
+
+    return
 
 
+def store_training_data(x_data: np.ndarray, y_data: np.ndarray, behaviour_threshold: int, segment_size: int, sequence_length: int) -> None:
+    """
+    Store the training data to disk.
 
+    This function saves the feature data (x_data) and the target data (y_data) as numpy binary files (.npy).
+    The files are saved in the 'data' directory with names based on the behaviour threshold, segment size, and sequence length.
 
+    Parameters:
+    - x_data (np.ndarray): The feature data to be saved.
+    - y_data (np.ndarray): The target data to be saved.
+    - behaviour_threshold (int): The behaviour threshold used in the data preparation.
+    - segment_size (int): The segment size used in the data preparation.
+    - sequence_length (int): The sequence length used in the data preparation.
 
+    Returns:
+    - None
+    """
+    x_data_path = here(f'data/x_data_BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}.npy')
+    y_data_path = here(f'data/y_data_BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}.npy')
 
+    np.save(x_data_path, x_data)
+    np.save(y_data_path, y_data)
 
+    print(f"Training data has been stored at data/<x or y>_data_BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}.npy")
+    return None
 
+def load_training_data(behaviour_threshold: int, segment_size: int, sequence_length: int) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Load the training data from disk.
 
+    This function loads the feature data (x_data) and the target data (y_data) from numpy binary files (.npy).
+    The files are loaded from the 'data' directory with names based on the behaviour threshold, segment size, and sequence length.
+
+    Parameters:
+    - behaviour_threshold (int): The behaviour threshold used in the data preparation.
+    - segment_size (int): The segment size used in the data preparation.
+    - sequence_length (int): The sequence length used in the data preparation.
+
+    Returns:
+    - x_data (np.ndarray): The loaded feature data.
+    - y_data (np.ndarray): The loaded target data.
+    """
+    x_data_path = here(f'data/x_data_BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}.npy')
+    y_data_path = here(f'data/y_data_BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}.npy')
+
+    x_data = np.load(x_data_path)
+    y_data = np.load(y_data_path)
+
+    print(f"Training data has been loaded from data/<x or y>_data_BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}.npy")
+    return x_data, y_data
 
 
 
@@ -415,3 +457,6 @@ def data_pipeline():
 
 
     return
+
+
+
