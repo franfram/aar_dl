@@ -1,3 +1,9 @@
+# CHECK THIS
+# https://mkdocstrings.github.io/recipes/
+
+# TUTORIAL ON MKDOCS HERE (for proj and for blog)
+#https://www.youtube.com/watch?v=Q-YA_dA8C20&t=967s
+#https://www.youtube.com/watch?v=4OjnOc6ftJ8
 #import cudf as pd
 #import cupy as np
 import pandas as pd
@@ -83,7 +89,18 @@ def replace_nan_behaviours(df: pd.DataFrame) -> pd.DataFrame:
     df['behaviours'] = df['behaviours'].fillna('Unknown')
     return df
 
-def compute_behaviours(df: pd.DataFrame) -> pd.DataFrame:
+def compute_behaviours(
+        df: pd.DataFrame, 
+        replacements: Dict = {
+            'resting': 'Inactive',
+            'vigilance': 'Inactive',
+            'fast_walk': 'Walking',
+            'walk': 'Walking',
+            'eating': 'Foraging',
+            'search': 'Foraging'
+            #'search': 'Walking'
+        }
+) -> pd.DataFrame:
     """
     Compute behaviours according to a specific rule.
 
@@ -93,18 +110,22 @@ def compute_behaviours(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
     - pd.DataFrame: The DataFrame with computed behaviours.
     """
-    replacements = {
-        'resting': 'Inactive',
-        'vigilance': 'Inactive',
-        'fast_walk': 'Walking',
-        'walk': 'Walking',
-        'eating': 'Foraging',
-        'search': 'Foraging'
-    }
+
     df['behaviours'] = df['behaviours'].replace(replacements)
     return df
 
-def transform_data(df: pd.DataFrame) -> pd.DataFrame:
+def transform_data(
+        df: pd.DataFrame, 
+        replacements: Dict = {
+            'resting': 'Inactive',
+            'vigilance': 'Inactive',
+            'fast_walk': 'Walking',
+            'walk': 'Walking',
+            'eating': 'Foraging',
+            'search': 'Foraging'
+            #'search': 'Walking'
+        }
+) -> pd.DataFrame:
     """
     Apply a series of transformations to a DataFrame.
 
@@ -118,7 +139,7 @@ def transform_data(df: pd.DataFrame) -> pd.DataFrame:
     df = filter_outliers(df, ['pitch.angle', 'roll.angle'])
     df = transform_angles(df, ['pitch.angle', 'roll.angle'])
     df = replace_nan_behaviours(df)
-    df = compute_behaviours(df)
+    df = compute_behaviours(df, replacements=replacements)
     return df
 
 # Function to extract consecutive segments
@@ -235,10 +256,11 @@ def extract_all_segments(df: pd.DataFrame, allowed_behaviours: List[str] = ['Ina
                 'sequence_length': sequence_length
             }
     
+            
     
         if full_data.get(segments_key) == None:
             full_data.update({segments_key: all_segments})
-            full_data.update({segments_key_NoAcc: all_segments}) # Acc data will be removed downstream
+            #full_data.update({segments_key_NoAcc: all_segments}) # Acc data will be removed downstream
         else:
             print("There might be a problem")
 
@@ -255,8 +277,9 @@ def check_for_nans(arr, label):
 "MUST REFACTOR THIS FUNCTION, LOOKS LIKE SH!T"
 def prepare_training_data(
     all_segments: Dict[str, Dict[str, Union[int, List[pd.DataFrame]]]], 
-    sequence_length: int, 
-    segment_size: int, 
+    behaviour_threshold: int = 51,
+    sequence_length: int = 10, 
+    segment_size: int = 64, 
     features: List[str] = ['acc_x', 'acc_y', 'acc_z', 'mag_x', 'mag_y', 'mag_z', 'pitch.angle', 'roll.angle'], 
     nan_strategy: str = 'interpolate', # 'mean, 'median', or 'interpolate'
 ) -> Tuple[np.ndarray, np.ndarray, Dict]:
@@ -275,6 +298,8 @@ def prepare_training_data(
     - y_train: One-hot encoded behaviours in the shape (n_sequences, sequence_length, n_behaviours).
     - behaviour_mapping: Mapping for the behaviour encoding
     """
+
+    all_segments = all_segments[f"BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}"]
 
     # Initialize lists to hold the training data
     x_data = []
@@ -452,11 +477,33 @@ def load_training_data(behaviour_threshold: int, segment_size: int, sequence_len
 
 
 
-def data_pipeline():
-    None 
+def data_pipeline(
+    data_path: str='data/clean_sheep_data_2019.csv', 
+    features: List[str] = ['acc_x', 'acc_y', 'acc_z', 'mag_x', 'mag_y', 'mag_z', 'pitch.angle', 'roll.angle'],
+    sequence_length: int = 10, 
+    segment_size: int = 64,
+    behaviour_threshold: int = 51,
+    move_window_by: str = 'fraction',
+    replacements: Dict = {
+        'resting': 'Inactive',
+        'vigilance': 'Inactive',
+        'fast_walk': 'Walking',
+        'walk': 'Walking',
+        'eating': 'Foraging',
+        #'search': 'Foraging'
+        #'search': 'Walking'
+    }
+    
+    ):
 
+    cleaned_data = pd.read_csv(data_path)
+    df = transform_data(cleaned_data, replacements=replacements)
+    full_data = extract_all_segments(df,  behaviour_threshold=behaviour_threshold, segment_size=segment_size, sequence_length=sequence_length, move_window_by=move_window_by)
+    x_data, y_data, behaviour_mapping = prepare_training_data(full_data, features = features, behaviour_threshold=behaviour_threshold, sequence_length=sequence_length, segment_size=segment_size)
 
-    return
+    store_training_data(x_data, y_data, behaviour_threshold, segment_size, sequence_length)
+
+    return x_data, y_data, behaviour_mapping, full_data
 
 
 
