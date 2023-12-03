@@ -241,7 +241,7 @@ def extract_all_segments(df: pd.DataFrame, allowed_behaviours: List[str] = ['Ina
     for behaviour_threshold, segment_size, sequence_length in product(behaviour_threshold, segment_size, sequence_length): 
 
         segments_key = f"BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}"
-        segments_key_NoAcc = f"BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}_NoAcc"
+        #segments_key_NoAcc = f"BT{behaviour_threshold}_SS{segment_size}_SL{sequence_length}_NoAcc"
 
         all_segments = {}
         for sheep in df['sheep_name'].unique(): 
@@ -484,6 +484,7 @@ def data_pipeline(
     segment_size: int = 64,
     behaviour_threshold: int = 51,
     move_window_by: str = 'fraction',
+    allowed_behaviours: List[str] = ['Inactive', 'Walking', 'Foraging'],
     replacements: Dict = {
         'resting': 'Inactive',
         'vigilance': 'Inactive',
@@ -496,9 +497,15 @@ def data_pipeline(
     
     ):
 
+    allowed_behaviours_are_in_replacements = all([behaviour in replacements.values() for behaviour in allowed_behaviours])
+
+    if not allowed_behaviours_are_in_replacements:
+        raise ValueError("All behaviours in `allowed_behaviours` must be in `replacements.values()`")
+
+
     cleaned_data = pd.read_csv(data_path)
     df = transform_data(cleaned_data, replacements=replacements)
-    full_data = extract_all_segments(df,  behaviour_threshold=behaviour_threshold, segment_size=segment_size, sequence_length=sequence_length, move_window_by=move_window_by)
+    full_data = extract_all_segments(df, allowed_behaviours=allowed_behaviours, behaviour_threshold=behaviour_threshold, segment_size=segment_size, sequence_length=sequence_length, move_window_by=move_window_by)
     x_data, y_data, behaviour_mapping = prepare_training_data(full_data, features = features, behaviour_threshold=behaviour_threshold, sequence_length=sequence_length, segment_size=segment_size)
 
     store_training_data(x_data, y_data, behaviour_threshold, segment_size, sequence_length)
