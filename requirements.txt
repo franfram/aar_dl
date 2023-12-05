@@ -5,3 +5,8 @@ sklearn
 typing
 itertools
 tensorflow
+mkdocs
+mkdocstrings
+seaborn
+matplotlib
+plotly
