@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 import seaborn as sns
@@ -77,3 +79,19 @@ def plot_loss(fit):
     fig.update_layout(title_text='Training and Validation Metrics', showlegend=True)
     fig.show()
     
+
+
+def plot_class_distribution(y_train): 
+    # Flatten the timestep and one-hot dimensions of your labels
+    y_train_flat = y_train.reshape(-1, y_train.shape[-1])
+
+    # Convert one-hot encoded labels to integers
+    y_train_integers = np.argmax(y_train_flat, axis=1)
+
+    # Plot distribution of classes
+    hist_weights = np.ones_like(y_train_integers) / len(y_train_integers)
+
+    fig = plt.figure()
+    hist = plt.hist(y_train_integers, weights=hist_weights)
+
+    return hist
