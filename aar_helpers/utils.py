@@ -4,6 +4,7 @@
 #from oauth2client.client import GoogleCredentials
 import os
 import pandas as pd
+import shutil
 
 def convert_txt_to_csv_gdrive(gdrive_folder: str) -> None:
     """
@@ -60,7 +61,6 @@ def convert_txt_to_csv_gdrive(gdrive_folder: str) -> None:
 
 
 
-import shutil
 
 def backup_gdrive_folder(gdrive_folder: str) -> None:
     """
@@ -78,3 +78,40 @@ def backup_gdrive_folder(gdrive_folder: str) -> None:
         return
     shutil.copytree(gdrive_folder, backup_folder)
     print(f"Backup of {gdrive_folder} created at {backup_folder}")
+
+
+
+
+
+def verify_backup(gdrive_folder: str, backup_folder: str, subfolder: str = None) -> None:
+    """
+    This function verifies that all the files in a specific subfolder of gdrive_folder and backup_folder are the same and their file sizes are the same.
+
+    Args:
+    gdrive_folder (str): The path to the Google Drive folder.
+    backup_folder (str): The path to the backup folder.
+    subfolder (str, optional): The subfolder to check. If not provided, checks the entire gdrive_folder.
+
+    Returns:
+    None
+    """
+    if subfolder:
+        gdrive_folder = os.path.join(gdrive_folder, subfolder)
+        backup_folder = os.path.join(backup_folder, subfolder)
+
+    for dirpath, dirnames, filenames in os.walk(gdrive_folder):
+        for filename in filenames:
+            gdrive_file = os.path.join(dirpath, filename)
+            backup_file = gdrive_file.replace(gdrive_folder, backup_folder)
+
+            if not os.path.exists(backup_file):
+                print(f"File {backup_file} does not exist in backup.")
+                continue
+
+            gdrive_file_size = os.path.getsize(gdrive_file)
+            backup_file_size = os.path.getsize(backup_file)
+
+            if gdrive_file_size != backup_file_size:
+                print(f"File {backup_file} size does not match original file size.")
+
+
