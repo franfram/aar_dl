@@ -3,8 +3,8 @@ numpy
 pyprojroot
 scikit-learn
 typing
-tensorflow==2.13.1
-keras==2.13.1
+tensorflow==2.14.0
+keras==2.14.0
 onnx
 onnxruntime
 mkdocs
@@ -12,3 +12,4 @@ mkdocstrings
 seaborn
 matplotlib
 plotly
+keras2onnx
