@@ -3,7 +3,10 @@ numpy
 pyprojroot
 scikit-learn
 typing
-tensorflow
+tensorflow==2.13.1
+keras==2.13.1
+onnx
+onnxruntime
 mkdocs
 mkdocstrings
 seaborn
