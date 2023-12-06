@@ -18,9 +18,9 @@ def convert_txt_to_csv_gdrive(gdrive_folder: str) -> None:
     None
     """
     # Authenticate and create the PyDrive client
-    gauth = GoogleAuth()
-    gauth.credentials = GoogleCredentials.get_application_default()
-    drive = GoogleDrive(gauth)
+    #gauth = GoogleAuth()
+    #gauth.credentials = GoogleCredentials.get_application_default()
+    #drive = GoogleDrive(gauth)
 
     # Get all folders in the directory
     folders = [f for f in os.listdir(gdrive_folder) if os.path.isdir(os.path.join(gdrive_folder, f))]
@@ -57,3 +57,24 @@ def convert_txt_to_csv_gdrive(gdrive_folder: str) -> None:
                 print(f"Saved {csv_file} in {new_folder_path}")
             except Exception as e:
                 print(f"Error processing file {txt_file}: {e}")
+
+
+
+import shutil
+
+def backup_gdrive_folder(gdrive_folder: str) -> None:
+    """
+    This function creates a backup of a Google Drive folder.
+
+    Args:
+    gdrive_folder (str): The path to the Google Drive folder.
+
+    Returns:
+    None
+    """
+    backup_folder = gdrive_folder + "_backup"
+    if os.path.exists(backup_folder):
+        print(f"Backup folder {backup_folder} already exists. Skipping to avoid overwriting.")
+        return
+    shutil.copytree(gdrive_folder, backup_folder)
+    print(f"Backup of {gdrive_folder} created at {backup_folder}")
