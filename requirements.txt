@@ -3,7 +3,6 @@ numpy
 pyprojroot
 scikit-learn
 typing
-itertools
 tensorflow
 mkdocs
 mkdocstrings
