@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from pyprojroot.here import here
-#from tensorflow.keras.models import Sequential
-#from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense
-#from tensorflow.keras.utils import plot_model
 
 from tensorflow.keras import layers
 from tensorflow.keras import metrics
@@ -85,55 +82,25 @@ lr=1e-6
 epochs=300
 patience=50
 
-
 earlystop_callback = tf.keras.callbacks.EarlyStopping(
     #monitor='val_accuracy', min_delta=0.0001, patience=20
     monitor='val_loss', min_delta=0.0001, patience=patience
 )
 
-## F1-Score based callback
-#earlystop_callback = tf.keras.callbacks.EarlyStopping(
-    #monitor='val_auc',
-    #mode='max',  # We want to maximize F1-score
-    #patience=10,
-    #restore_best_weights=True
-#)
-
 checkpoint = ModelCheckpoint('model-{epoch:03d}.keras', verbose=1, monitor='val_loss', save_best_only=False, mode='auto')
-
-#class SaveBestModel(tf.keras.callbacks.Callback):
-    #def __init__(self, save_best_metric='val_auc', this_max=True):
-        #super(SaveBestModel, self).__init__()
-        #self.save_best_metric = save_best_metric
-        #self.this_max = this_max
-        #self.best_weights = None
-        #self.best_value = -float('inf') if this_max else float('inf')
-
-    #def on_epoch_end(self, epoch, logs=None):
-        #current_value = logs.get(self.save_best_metric)
-        #if current_value is None:
-            #return
-        #if (self.this_max and current_value > self.best_value) or (not self.this_max and current_value < self.best_value):
-            #self.best_value = current_value
-            #self.best_weights = self.model.get_weights()
-
-    #def on_train_end(self, logs=None):
-        #self.model.set_weights(self.best_weights)
-
-#save_best_model_callback = SaveBestModel(save_best_metric='val_auc', this_max=True)
 
 
 
 
 
 model = ad.make_model(segment_size=segment_size, sequence_length=sequence_length, nfeatures=n_features, nclasses=n_classes, cnn_only=False, dropout_rate=0)
-
+model
 
 
 """
 DEFINE CUSTOM LOSS FUNCTION
-
 """
+
 # Define custom loss function in order to apply class weights manually to each time step. 
 def weighted_categorical_crossentropy(class_weights):
     def loss(y_true, y_pred):
@@ -157,60 +124,55 @@ def weighted_categorical_crossentropy(class_weights):
 
     return loss
 
+"""
+COMPILE AND TRAIN THE MODEL
+
+"""
+
 model.compile(optimizer='adam', 
               loss=weighted_categorical_crossentropy(class_weights_dict),
               metrics=['accuracy'])
-
-#model.compile(
-    #optimizer='adam', 
-    #loss=weighted_categorical_crossentropy(class_weights_dict),
-    #metrics=[
-        #metrics.CategoricalAccuracy(name='accuracy'),
-        #metrics.Precision(name='precision'),
-        #metrics.Recall(name='recall'),
-        #metrics.AUC(name='auc'),
-    #]
-#)
-
-
-#model.compile(optimizer='adam', 
-              #loss=weighted_categorical_crossentropy(class_weights_dict),
-              #metrics=['accuracy', f1_score, precision, recall])
-
-
-#model.compile(
-    ##optimizer=tf.keras.optimizers.Adam(learning_rate=lr),
-    #optimizer=tf.keras.optimizers.Adadelta(), 
-    ##loss='categorical_crossentropy',
-    #loss=tf.keras.losses.CategoricalCrossentropy(),
-    ##loss=tf.keras.losses.CategoricalFocalCrossentropy(gamma=10),
-    ##loss=tf.keras.losses.CategoricalFocalCrossentropy(),
-    #metrics=['accuracy']
-    ##metrics=[
-        ##metrics.CategoricalAccuracy(name='accuracy'),
-        ##metrics.Precision(name='precision'),
-        ##metrics.Recall(name='recall'),
-        ##metrics.AUC(name='auc'),
-    ##], 
-    ##metrics=['accuracy', 'f1_score']
-    ##metrics=['precision']
-    ##metrics=['accuracy', 'precision']#, 'recall']# 'AUC', 'AUPRC'] #Accuracy is not an useful metric here?
-    ##metrics=tf.keras.metrics.CategoricalAccuracy(name='categorical_accuracy')
-#)
 
 fit = model.fit(
     x=x_train, 
     y=y_train,  
     batch_size=64, 
-    epochs=epochs, 
+    #epochs=epochs, 
+    epochs=10, 
     validation_data=(x_val, y_val),
     callbacks=[earlystop_callback],
     #callbacks=[earlystop_callback, save_best_model_callback],
 )
 
 
+"""
+PLOT MODEL TRAINING RESULTS
+"""
+
 ad.plot_loss(fit)
 ad.plot_confusion_matrix(model, x_val, y_val, label_names)
 
-##model = load_model(f"./")
+
+
+"""
+SAVE (AND/OR LOAD) THE MODEL
+
+"""
+
+model_name = "model_SL10_SS128_BT51"
+model.save(f'./models/{model_name}.keras')
+#model = load_model(f'./models/{model_name}.keras')
+
+"""
+USE THE MODEL TO MAKE PREDICTIONS
+"""
+
+# Make predictions. Note that `x_val` has shape (n_samples, sequence_length * segment_size, n_features)
+predictions = model.predict(x_val)
+# Predictions have shape (n_samples, sequence_length, n_classes)
+predictions.shape
+
+# One can also pass a single sample to the model to get the prediction:
+predictions_singleSample = model.predict(x_val[0:1, :, :])
+predictions_singleSample, predictions_singleSample.shape
 
